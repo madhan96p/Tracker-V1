@@ -1,187 +1,173 @@
-# FTracker — Vanilla JS Edition
+# FTracker — F&O Portfolio Dashboard
 
-A comprehensive **F&O Trading Dashboard** built with pure HTML, CSS, and JavaScript.  
-**No framework. No build step. Just open `index.html`.**
-
-Data stored in **Google Sheets**, deployed on **Netlify**.
+A zero-build, single-file trading dashboard that reads directly from Google Sheets  
+via Apps Script and deploys instantly to Netlify.
 
 ---
 
-## 📂 Project Structure
+## ⚡ Tech Stack
+
+| Layer    | Technology                  |
+|----------|-----------------------------|
+| Frontend | HTML5 + CSS3 + Vanilla JS   |
+| Charts   | Chart.js 4.4 (CDN)          |
+| Fonts    | Syne, Instrument Serif, JetBrains Mono (Google Fonts) |
+| Backend  | Google Apps Script (free)   |
+| Storage  | Google Sheets               |
+| Hosting  | Netlify (free tier)         |
+| Build    | **None** — zero build step  |
+
+---
+
+## 📋 Google Sheets Setup
+
+### Step 1 — Sheet tab names
+Your Google Sheet must have these exact tab names (case-sensitive):
+
+| Tab Name       | Data Section        |
+|----------------|---------------------|
+| `F&O`          | F&O Trades          |
+| `Holdings Data`| Stock Holdings      |
+| `Investments`  | Individual Investments |
+| `IPO`          | IPO Records         |
+| `Transactions` | Transaction Log     |
+
+> You can change these names in `gas-backend.gs` under `SHEET_MAP`.
+
+### Step 2 — Deploy the Apps Script
+
+1. Open your Google Sheet
+2. Go to **Extensions → Apps Script**
+3. Delete the default `Code.gs` content
+4. Paste the entire contents of `gas-backend.gs`
+5. Save (Ctrl+S)
+6. Click **Deploy → New deployment**
+   - Type: **Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone** ← important!
+7. Click **Deploy** and copy the Web App URL
+
+### Step 3 — Update the Frontend URL
+
+In `index.html`, find this line near the top of the `<script>` block:
+
+```javascript
+const GAS_URL = 'https://script.google.com/macros/s/...YOUR_SCRIPT.../exec';
+```
+
+Replace the URL with the one you copied in Step 2.
+
+---
+
+## 🚀 Netlify Deployment
+
+### Option A — Drag & Drop (fastest)
+1. Go to [app.netlify.com](https://app.netlify.com)
+2. Drag and drop the `ftracker/` folder onto the dashboard
+3. Done — live in seconds!
+
+### Option B — GitHub + Auto-deploy
+1. Push this folder to a GitHub repo
+2. On Netlify: **Add new site → Import from Git**
+3. Select your repo
+4. Build settings are auto-detected from `netlify.toml`
+5. Every `git push` to `main` auto-deploys
+
+---
+
+## 🗂 Project Structure
 
 ```
 ftracker/
-├── index.html                  ← SPA shell (all tab sections live here)
-├── css/
-│   └── style.css               ← Dark terminal theme, full responsive
-├── js/
-│   ├── config.js               ← All constants + localStorage persistence
-│   ├── sheets.js               ← Data layer (mock OR Apps Script fetch)
-│   ├── charts.js               ← 8 Chart.js charts
-│   ├── tables.js               ← 6 data tables with search/sort/filter
-│   └── app.js                  ← Bootstrap: nav, modal, load, auto-refresh
-├── netlify/
-│   └── functions/
-│       └── sheets-proxy.js     ← (Optional) Netlify Function for Sheets API
-├── netlify.toml                ← Netlify deploy config
-└── README.md
+├── index.html        ← The entire app (HTML + CSS + JS, single file)
+├── netlify.toml      ← Netlify deploy config
+├── gas-backend.gs    ← Google Apps Script (paste into GAS editor)
+└── README.md         ← This file
 ```
 
 ---
 
-## 🚀 Quick Start (Demo Mode)
+## 📊 Dashboard Sections
 
-1. Clone or download this repo
-2. Open `index.html` in your browser  
-   *(or run `npx serve .` for local server)*
-3. You'll see the dashboard loaded with built-in sample F&O data
-
-No setup needed for demo mode.
+| Section       | Description                                          |
+|---------------|------------------------------------------------------|
+| Dashboard     | Summary KPIs + Cumulative P&L + Win/Loss + Daily P&L |
+| F&O Trades    | Full trade log with search, filter (Win/Loss), sort, pagination |
+| Holdings      | Stock portfolio with P&L per position                |
+| Investments   | Individual investment transactions                   |
+| IPO           | IPO allotment tracker                                |
+| Transactions  | Full transaction history                             |
+| Analytics     | Volume chart, holdings distribution, monthly P&L, instrument-wise breakdown |
 
 ---
 
-## 🔗 Connect Your Google Sheet
+## 🔄 Data Refresh
 
-### Option A — Google Apps Script (Recommended)
+- Data auto-refreshes every **5 minutes**
+- Manual refresh via the **↻ Refresh** button in the top-right
+- A connection indicator in the bottom-left shows live/error status
 
-This is the simplest approach. The Apps Script acts as a public JSON API
-for your sheet, and the frontend fetches from it directly.
+---
 
-**Step 1: Set up your Google Sheet**
+## ⚙️ Column Auto-Detection
 
-Create a sheet with these exact tab names:
-- `F&O` — F&O trades
-- `Holdings Data` — stock holdings
-- `Investments` — individual investments
-- `IPO` — IPO investments
-- `Transaction Log` — transaction history
+The dashboard automatically detects column types by name:
 
-Column order for each tab:
+| Detected as | Column name contains           |
+|-------------|-------------------------------|
+| P&L         | `p&l`, `pnl`, `profit`, `net`, `gross` |
+| Currency    | `price`, `value`, `invest`, `charges`, `avg`, `cost`, `ltp`, `current`, `entry`, `exit` |
+| Percentage  | `%`, `percent`, `pct`, `return`, `rate` |
+| Quantity    | `qty`, `quantity`, `lots`, `shares`, `filled` |
+| Date        | `date`, `time`                |
 
-| F&O         | Holdings Data | Investments   | IPO          | Transaction Log |
-|-------------|---------------|---------------|--------------|-----------------|
-| Date        | Company Name  | Company Name  | Company      | Date            |
-| Instrument  | Symbol        | Ticker        | Date         | Instrument      |
-| Type        | Sector        | Date          | Issue Price  | Action          |
-| Qty         | Avg Buy Price | Order Price   | Allotted     | Price           |
-| Entry Price | Total Qty     | Filled Qty    | Listing Price| Qty             |
-| Exit Price  | Total Invested| Current Price | Current Price| Amount          |
-| Gross P&L   | Current Value | Invested      | Invested     | Charges         |
-| Charges     | Signal        | Current Value |              |                 |
-| Net P&L     |               |               |              |                 |
+Positive P&L values appear **green**, negative appear **red** automatically.
 
-**Step 2: Add the Apps Script**
+---
 
-In your Google Sheet: **Extensions → Apps Script**
+## 🛠 Customisation
 
-Paste this code:
-
+### Change the GAS URL
 ```javascript
-function doGet(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  function getSheetData(name) {
-    const sheet = ss.getSheetByName(name);
-    if (!sheet) return [];
-    return sheet.getDataRange().getValues();
-  }
-
-  const payload = {
-    fo:           getSheetData('F&O'),
-    holdings:     getSheetData('Holdings Data'),
-    investments:  getSheetData('Investments'),
-    ipo:          getSheetData('IPO'),
-    transactions: getSheetData('Transaction Log')
-  };
-
-  return ContentService
-    .createTextOutput(JSON.stringify(payload))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+// index.html, inside <script>
+const GAS_URL = 'YOUR_NEW_URL_HERE';
 ```
 
-**Step 3: Deploy as Web App**
-
-1. Click **Deploy → New deployment**
-2. Type: **Web app**
-3. Execute as: **Me**
-4. Who has access: **Anyone** *(so the frontend can fetch it)*
-5. Click **Deploy** → copy the URL
-
-**Step 4: Configure FTracker**
-
-1. Open FTracker in your browser
-2. Click **⚙** (top right)
-3. Set Data Source to **Google Apps Script Web App**
-4. Paste your deployment URL
-5. Click **Save & Reload**
-
----
-
-### Option B — Netlify Function + Google Sheets API
-
-Use this if you want to hide your Spreadsheet ID server-side.
-
-1. Enable the **Google Sheets API** in Google Cloud Console
-2. Create an **API key** (restrict it to Sheets API only)
-3. In **Netlify → Site Settings → Environment Variables**, add:
-   - `GOOGLE_API_KEY` = your API key
-   - `SPREADSHEET_ID` = from your sheet URL (the long string between `/d/` and `/edit`)
-4. Update `js/sheets.js` to call `/.netlify/functions/sheets-proxy?sheet=F%26O` etc.
-
----
-
-## ☁️ Deploy to Netlify
-
-### Via Netlify CLI
-```bash
-npm install -g netlify-cli
-netlify login
-netlify deploy --prod --dir .
+### Change auto-refresh interval
+```javascript
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes → change as needed
 ```
 
-### Via GitHub
-1. Push this folder to a GitHub repo
-2. Go to [app.netlify.com](https://app.netlify.com) → **New site from Git**
-3. Select your repo
-4. Build command: *(leave empty)*
-5. Publish directory: `.`
-6. Click **Deploy site**
+### Change rows per page
+```javascript
+const PAGE_SIZE = 30; // rows per table page
+```
 
-Auto-deploy is enabled — every push to `main` deploys automatically.
-
----
-
-## ⚙️ Customization
-
-### Change column order
-Edit `CONFIG.columns` in `js/config.js` to match your sheet's column layout.
-
-### Change sheet tab names
-Edit `CONFIG.sheetNames` in `js/config.js`.
-
-### Add new tabs/sheets
-1. Add a tab in `index.html`
-2. Add nav button
-3. Add a parse function in `js/sheets.js`
-4. Add a render function in `js/tables.js`
-5. Call it from `Tables.renderAll()`
-
-### Change refresh interval
-Open Settings (⚙) → Auto-Refresh dropdown.
+### Change sheet tab names (in gas-backend.gs)
+```javascript
+const SHEET_MAP = {
+  foTrades:    "F&O",           // ← your actual tab name
+  holdings:    "Holdings Data",
+  investments: "Investments",
+  ipos:        "IPO",
+  transactions: "Transactions"
+};
+```
 
 ---
 
-## 🎨 Design
+## 🐞 Troubleshooting
 
-- **Theme**: Dark terminal ("Bloomberg meets Obsidian")
-- **Colors**: `#00c896` profit green · `#ff4757` loss red · `#4895ef` blue
-- **Fonts**: Sora (UI) + JetBrains Mono (numbers)
-- **Charts**: Chart.js 4.4
-- **No dependencies** except Chart.js (loaded from CDN)
+| Issue | Fix |
+|-------|-----|
+| "Connection failed" | Check that Apps Script is deployed as "Anyone" can access |
+| Blank tables | Verify the sheet tab names match `SHEET_MAP` exactly |
+| Wrong numbers | Check that the first row of each sheet is a header row |
+| CORS error in console | Re-deploy the Apps Script as a new deployment (not just a new version) |
+| Charts not rendering | Data may be missing Date or P&L columns — check column headers |
 
 ---
 
-## 📜 License
+## 📄 License
 
-MIT — free to use, modify, and deploy.
+MIT — use freely for personal finance tracking.

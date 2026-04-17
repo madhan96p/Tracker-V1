@@ -1,353 +1,1852 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FTracker — F&O Trading Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FTracker — F&O Portfolio Dashboard</title>
+  <meta name="description" content="Personal trading dashboard for F&O trades, holdings, investments, IPO, and analytics.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       RESET & VARIABLES
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #030810;
+      --bg-1:       #06101d;
+      --bg-2:       #091828;
+      --bg-3:       #0d2035;
+      --bg-4:       #102540;
+
+      --border:     rgba(0, 210, 170, 0.10);
+      --border-2:   rgba(0, 210, 170, 0.22);
+      --border-3:   rgba(0, 210, 170, 0.40);
+
+      --accent:     #00d2aa;
+      --accent-dim: rgba(0, 210, 170, 0.12);
+      --accent-glow: rgba(0, 210, 170, 0.25);
+
+      --sky:        #38bdf8;
+      --sky-dim:    rgba(56, 189, 248, 0.12);
+
+      --gain:       #4ade80;
+      --gain-dim:   rgba(74, 222, 128, 0.12);
+      --loss:       #f87171;
+      --loss-dim:   rgba(248, 113, 113, 0.12);
+      --warn:       #fbbf24;
+
+      --t1:         #dff2ec;
+      --t2:         #7aaebb;
+      --t3:         #3d6572;
+      --t4:         #1e3d4e;
+
+      --mono:       'JetBrains Mono', monospace;
+      --serif:      'Instrument Serif', serif;
+      --sans:       'Syne', sans-serif;
+
+      --sidebar-w:  256px;
+      --header-h:   56px;
+      --radius:     8px;
+    }
+
+    html { font-size: 13px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--t1);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-3); }
+
+    /* ═══════════════════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════════════════ */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg-1);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    }
+
+    .logo-area {
+      padding: 20px 20px 18px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .logo-area::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 20px; right: 20px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0.5;
+    }
+    .logo-mark {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+    .logo-name {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      color: var(--t1);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .logo-name em {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .nav-section {
+      padding: 14px 10px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .nav-group-label {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--t4);
+      padding: 0 10px;
+      margin: 10px 0 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--t3);
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+      letter-spacing: 0.03em;
+      margin-bottom: 1px;
+      user-select: none;
+    }
+    .nav-item:hover {
+      background: var(--accent-dim);
+      color: var(--t2);
+      border-color: var(--border);
+    }
+    .nav-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: var(--border-2);
+    }
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--bg-3);
+      color: var(--t3);
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      padding: 1px 6px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .nav-item.active .nav-badge {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: var(--border-2);
+    }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .conn-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--t3);
+      letter-spacing: 0.03em;
+    }
+    .conn-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--t4);
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .conn-dot.live {
+      background: var(--gain);
+      box-shadow: 0 0 8px var(--gain);
+      animation: blink 2.5s ease-in-out infinite;
+    }
+    .conn-dot.error { background: var(--loss); box-shadow: 0 0 8px var(--loss); }
+    .conn-dot.loading { background: var(--warn); animation: blink 0.8s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN LAYOUT
+    ═══════════════════════════════════════════════════════ */
+    #main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-width: 0;
+    }
+
+    /* ─── Header ─── */
+    #topbar {
+      height: var(--header-h);
+      background: rgba(3, 8, 16, 0.80);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .hamburger span {
+      width: 20px; height: 2px;
+      background: var(--t2);
+      border-radius: 2px;
+      transition: all 0.3s;
+      display: block;
+    }
+    #pageTitle {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #lastSync {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--t4);
+      letter-spacing: 0.05em;
+    }
+    .btn {
+      padding: 6px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--t2);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--border-3); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-accent {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .btn-accent:hover { opacity: 0.85; background: var(--accent); color: var(--bg); }
+
+    /* ─── Content ─── */
+    #content {
+      padding: 28px 28px 48px;
+      flex: 1;
+    }
+
+    /* Tab visibility */
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+
+    /* ═══════════════════════════════════════════════════════
+       LOADING / ERROR STATES
+    ═══════════════════════════════════════════════════════ */
+    #globalLoader {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      transition: opacity 0.4s, visibility 0.4s;
+    }
+    #globalLoader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .loader-logo {
+      font-family: var(--serif);
+      font-size: 2rem;
+      color: var(--accent);
+      font-style: italic;
+    }
+    .loader-bar {
+      width: 200px;
+      height: 2px;
+      background: var(--bg-3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .loader-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--sky));
+      border-radius: 2px;
+      animation: loadingBar 1.8s ease-in-out infinite;
+    }
+    @keyframes loadingBar {
+      0%   { width: 0%; margin-left: 0%; }
+      50%  { width: 70%; margin-left: 15%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+    .loader-msg {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--t3);
+      letter-spacing: 0.08em;
+    }
+
+    .error-banner {
+      background: var(--loss-dim);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .error-banner.show { display: flex; }
+    .error-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .error-msg {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--loss);
+      flex: 1;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       PAGE HEADER
+    ═══════════════════════════════════════════════════════ */
+    .page-head {
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      color: var(--t1);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .page-head h1 em { color: var(--accent); font-style: italic; }
+    .page-head p {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--t4);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SUMMARY CARDS
+    ═══════════════════════════════════════════════════════ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .kpi-card:hover { border-color: var(--border-2); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .kpi-card.c-accent::before { background: linear-gradient(90deg, var(--accent), transparent); }
+    .kpi-card.c-gain::before   { background: linear-gradient(90deg, var(--gain), transparent); }
+    .kpi-card.c-loss::before   { background: linear-gradient(90deg, var(--loss), transparent); }
+    .kpi-card.c-sky::before    { background: linear-gradient(90deg, var(--sky), transparent); }
+    .kpi-card.c-warn::before   { background: linear-gradient(90deg, var(--warn), transparent); }
+
+    .kpi-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-bottom: 10px;
+    }
+    .kpi-value {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--t1);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .kpi-value.gain { color: var(--gain); }
+    .kpi-value.loss { color: var(--loss); }
+    .kpi-value.sky  { color: var(--sky); }
+    .kpi-value.warn { color: var(--warn); }
+    .kpi-sub {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--t4);
+      margin-top: 6px;
+      letter-spacing: 0.03em;
+    }
+    .kpi-change {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      margin-top: 4px;
+    }
+    .kpi-change.up   { color: var(--gain); }
+    .kpi-change.down { color: var(--loss); }
+
+    /* ═══════════════════════════════════════════════════════
+       DATA TABLE
+    ═══════════════════════════════════════════════════════ */
+    .table-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .table-top {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .table-top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .table-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+    .row-count {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      background: var(--bg-3);
+      color: var(--t3);
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .table-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      padding: 6px 12px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--bg-3);
+      color: var(--t1);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      width: 180px;
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .search-input:focus { border-color: var(--border-3); }
+    .search-input::placeholder { color: var(--t4); }
+    .filter-select {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--bg-3);
+      color: var(--t2);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      outline: none;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+    }
+    .filter-select:focus { border-color: var(--border-3); }
+    .filter-select option { background: var(--bg-2); }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    thead tr { background: var(--bg-3); }
+
+    th {
+      padding: 9px 14px;
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--t3);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: color 0.15s;
+    }
+    th:hover { color: var(--accent); }
+    th.s-asc::after  { content: ' ↑'; color: var(--accent); }
+    th.s-desc::after { content: ' ↓'; color: var(--accent); }
+
+    td {
+      padding: 9px 14px;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      border-bottom: 1px solid rgba(255,255,255,0.025);
+      white-space: nowrap;
+      transition: background 0.1s;
+    }
+    tr:hover td { background: rgba(0,210,170,0.04); }
+    tr:last-child td { border-bottom: none; }
+
+    .cell-gain { color: var(--gain); }
+    .cell-loss { color: var(--loss); }
+    .cell-sky  { color: var(--sky); }
+    .cell-mute { color: var(--t2); }
+    .cell-dim  { color: var(--t3); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .badge-gain { background: var(--gain-dim); color: var(--gain); }
+    .badge-loss { background: var(--loss-dim); color: var(--loss); }
+    .badge-neu  { background: var(--sky-dim); color: var(--sky); }
+
+    .empty-row td {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--t4);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      border: none;
+    }
+
+    /* Pagination */
+    .table-foot {
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .page-info {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--t4);
+    }
+    .page-btns {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .page-btn {
+      padding: 3px 9px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--t3);
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 28px;
+      text-align: center;
+    }
+    .page-btn:hover { border-color: var(--border-3); color: var(--accent); }
+    .page-btn.active { border-color: var(--border-3); color: var(--accent); background: var(--accent-dim); }
+    .page-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    /* ═══════════════════════════════════════════════════════
+       CHARTS
+    ═══════════════════════════════════════════════════════ */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .chart-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .chart-card.span-2 { grid-column: 1 / -1; }
+    .chart-card.span-3 { grid-column: 1 / -1; } /* legacy fallback */
+    .chart-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--t4);
+      margin-bottom: 14px;
+    }
+    .chart-wrap {
+      position: relative;
+    }
+    .chart-wrap canvas { max-height: 260px; }
+    .chart-wrap.h-sm canvas { max-height: 200px; }
+    .chart-wrap.h-md canvas { max-height: 300px; }
+
+    /* ═══════════════════════════════════════════════════════
+       DIVIDERS
+    ═══════════════════════════════════════════════════════ */
+    .glow-sep {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--sky), transparent);
+      opacity: 0.2;
+      margin: 28px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       OVERLAY (mobile)
+    ═══════════════════════════════════════════════════════ */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 190;
+      backdrop-filter: blur(2px);
+    }
+    #overlay.show { display: block; }
+
+    /* ═══════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card.span-2 { grid-column: auto; }
+    }
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 260px; }
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.5); }
+      #overlay.show { display: block; }
+      .hamburger { display: flex; }
+      #main { margin-left: 0; }
+      #content { padding: 16px 16px 32px; }
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .cards-grid { grid-template-columns: 1fr; }
+      .table-controls { flex-direction: column; align-items: flex-start; }
+      .search-input { width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════════
-       TOP BAR
-  ═══════════════════════════════════════════════════ -->
-  <header class="topbar">
-    <div class="topbar-brand">
-      <span class="brand-icon">◈</span>
-      <span class="brand-name">FTracker</span>
-      <span class="brand-sub">F&amp;O Dashboard</span>
+<!-- ═════════════════════════════════════════════════════
+     GLOBAL LOADER
+═════════════════════════════════════════════════════ -->
+<div id="globalLoader">
+  <div class="loader-logo">FTracker</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-msg" id="loaderMsg">Connecting to Google Sheets…</div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════
+     OVERLAY (mobile)
+═════════════════════════════════════════════════════ -->
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ═════════════════════════════════════════════════════
+     SIDEBAR
+═════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="logo-area">
+    <div class="logo-mark">Portfolio · Tracker</div>
+    <div class="logo-name">F<em>Tracker</em></div>
+  </div>
+
+  <nav class="nav-section">
+    <div class="nav-group-label">Overview</div>
+    <div class="nav-item active" data-tab="dashboard" onclick="showTab('dashboard')">
+      <span class="nav-icon">◈</span> Dashboard
     </div>
 
-    <nav class="topbar-nav" id="mainNav">
-      <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
-      <button class="nav-btn" data-tab="fo">F&amp;O Trades</button>
-      <button class="nav-btn" data-tab="holdings">Holdings</button>
-      <button class="nav-btn" data-tab="investments">Investments</button>
-      <button class="nav-btn" data-tab="ipo">IPO</button>
-      <button class="nav-btn" data-tab="transactions">Log</button>
-      <button class="nav-btn" data-tab="analytics">Analytics</button>
-    </nav>
+    <div class="nav-group-label" style="margin-top:14px">Trading</div>
+    <div class="nav-item" data-tab="fo" onclick="showTab('fo')">
+      <span class="nav-icon">⟳</span> F&amp;O Trades
+      <span class="nav-badge" id="badge-fo">0</span>
+    </div>
+    <div class="nav-item" data-tab="holdings" onclick="showTab('holdings')">
+      <span class="nav-icon">▦</span> Holdings
+      <span class="nav-badge" id="badge-holdings">0</span>
+    </div>
+    <div class="nav-item" data-tab="investments" onclick="showTab('investments')">
+      <span class="nav-icon">◐</span> Investments
+      <span class="nav-badge" id="badge-investments">0</span>
+    </div>
 
-    <div class="topbar-actions">
-      <span class="sync-status" id="syncStatus">
-        <span class="sync-dot"></span>
-        <span id="syncLabel">Offline</span>
-      </span>
-      <button class="btn-icon" id="refreshBtn" title="Refresh data">⟳</button>
-      <button class="btn-icon" id="settingsBtn" title="Settings">⚙</button>
+    <div class="nav-group-label" style="margin-top:14px">Other</div>
+    <div class="nav-item" data-tab="ipo" onclick="showTab('ipo')">
+      <span class="nav-icon">⬡</span> IPO
+      <span class="nav-badge" id="badge-ipo">0</span>
+    </div>
+    <div class="nav-item" data-tab="transactions" onclick="showTab('transactions')">
+      <span class="nav-icon">≡</span> Transactions
+      <span class="nav-badge" id="badge-transactions">0</span>
+    </div>
+
+    <div class="nav-group-label" style="margin-top:14px">Analytics</div>
+    <div class="nav-item" data-tab="analytics" onclick="showTab('analytics')">
+      <span class="nav-icon">◉</span> Analytics
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="conn-status">
+      <div class="conn-dot loading" id="connDot"></div>
+      <span id="connText">Connecting…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═════════════════════════════════════════════════════
+     MAIN
+═════════════════════════════════════════════════════ -->
+<main id="main">
+
+  <!-- Topbar -->
+  <header id="topbar">
+    <div class="topbar-left">
+      <div class="hamburger" onclick="openSidebar()">
+        <span></span><span></span><span></span>
+      </div>
+      <div id="pageTitle">DASHBOARD</div>
+    </div>
+    <div class="topbar-right">
+      <span id="lastSync"></span>
+      <button class="btn" onclick="doRefresh()" id="refreshBtn">↻ Refresh</button>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════════════
-       MAIN CONTENT
-  ═══════════════════════════════════════════════════ -->
-  <main class="main">
+  <!-- Content area -->
+  <div id="content">
 
-    <!-- ── DASHBOARD ── -->
-    <section class="tab-panel active" id="tab-dashboard">
-      <div class="panel-header">
-        <h2 class="panel-title">Portfolio Overview</h2>
-        <span class="panel-ts" id="lastUpdated">—</span>
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="cards-grid" id="summaryCards">
-        <div class="card card-stat">
-          <div class="card-label">Total Invested</div>
-          <div class="card-value mono" id="stat-invested">—</div>
-          <div class="card-sub">Across all positions</div>
-        </div>
-        <div class="card card-stat">
-          <div class="card-label">Net P&amp;L</div>
-          <div class="card-value mono" id="stat-pnl">—</div>
-          <div class="card-sub" id="stat-pnl-pct">—</div>
-        </div>
-        <div class="card card-stat">
-          <div class="card-label">Win Rate</div>
-          <div class="card-value mono" id="stat-winrate">—</div>
-          <div class="card-sub" id="stat-winloss">—</div>
-        </div>
-        <div class="card card-stat">
-          <div class="card-label">F&amp;O Trades</div>
-          <div class="card-value mono" id="stat-trades">—</div>
-          <div class="card-sub" id="stat-trades-sub">—</div>
-        </div>
-        <div class="card card-stat">
-          <div class="card-label">Holdings Value</div>
-          <div class="card-value mono" id="stat-holdings">—</div>
-          <div class="card-sub" id="stat-holdings-sub">—</div>
-        </div>
-        <div class="card card-stat">
-          <div class="card-label">Best Trade</div>
-          <div class="card-value mono profit" id="stat-best">—</div>
-          <div class="card-sub" id="stat-best-sub">—</div>
-        </div>
-      </div>
-
-      <!-- Mini Charts Row -->
-      <div class="charts-row">
-        <div class="card card-chart">
-          <div class="card-label">Cumulative P&amp;L</div>
-          <canvas id="miniPnlChart" height="120"></canvas>
-        </div>
-        <div class="card card-chart">
-          <div class="card-label">Win / Loss Split</div>
-          <canvas id="miniWinChart" height="120"></canvas>
-        </div>
-        <div class="card card-chart">
-          <div class="card-label">Holdings Distribution</div>
-          <canvas id="miniHoldingsChart" height="120"></canvas>
-        </div>
-      </div>
-
-      <!-- Recent Trades -->
-      <div class="card" style="margin-top:1.5rem">
-        <div class="section-header">
-          <span class="card-label">Recent F&amp;O Trades</span>
-          <button class="link-btn" data-goto="fo">View all →</button>
-        </div>
-        <div class="table-wrap">
-          <table class="data-table" id="recentTradesTable">
-            <thead>
-              <tr>
-                <th>Date</th><th>Instrument</th><th>Qty</th>
-                <th>Entry</th><th>Exit</th><th>Net P&amp;L</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="recentTradesTbody">
-              <tr><td colspan="7" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── F&O TRADES ── -->
-    <section class="tab-panel" id="tab-fo">
-      <div class="panel-header">
-        <h2 class="panel-title">F&amp;O Trades</h2>
-        <div class="panel-controls">
-          <input type="text" class="search-box" id="foSearch" placeholder="Search instrument…" />
-          <select class="filter-select" id="foFilter">
-            <option value="all">All</option>
-            <option value="win">Win</option>
-            <option value="loss">Loss</option>
-          </select>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="data-table sortable" id="foTable">
-            <thead>
-              <tr>
-                <th data-col="date">Date ↕</th>
-                <th data-col="instrument">Instrument ↕</th>
-                <th data-col="type">Type</th>
-                <th data-col="qty">Qty</th>
-                <th data-col="entry">Entry ₹</th>
-                <th data-col="exit">Exit ₹</th>
-                <th data-col="gross">Gross P&amp;L</th>
-                <th data-col="charges">Charges</th>
-                <th data-col="net">Net P&amp;L ↕</th>
-                <th data-col="status">Status</th>
-              </tr>
-            </thead>
-            <tbody id="foTbody">
-              <tr><td colspan="10" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-footer" id="foFooter"></div>
-      </div>
-    </section>
-
-    <!-- ── HOLDINGS ── -->
-    <section class="tab-panel" id="tab-holdings">
-      <div class="panel-header">
-        <h2 class="panel-title">Stock Holdings</h2>
-        <input type="text" class="search-box" id="holdingsSearch" placeholder="Search company…" />
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="data-table" id="holdingsTable">
-            <thead>
-              <tr>
-                <th>Company</th><th>Symbol</th><th>Sector</th>
-                <th>Avg Buy ₹</th><th>Qty</th><th>Invested ₹</th>
-                <th>Curr Value ₹</th><th>P&amp;L ₹</th><th>P&amp;L %</th>
-                <th>Signal</th>
-              </tr>
-            </thead>
-            <tbody id="holdingsTbody">
-              <tr><td colspan="10" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-footer" id="holdingsFooter"></div>
-      </div>
-    </section>
-
-    <!-- ── INVESTMENTS ── -->
-    <section class="tab-panel" id="tab-investments">
-      <div class="panel-header">
-        <h2 class="panel-title">Individual Investments</h2>
-        <input type="text" class="search-box" id="invSearch" placeholder="Search ticker…" />
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="data-table" id="invTable">
-            <thead>
-              <tr>
-                <th>Company</th><th>Ticker</th><th>Date</th>
-                <th>Order ₹</th><th>Qty</th><th>Curr ₹</th>
-                <th>Invested ₹</th><th>Current ₹</th><th>P&amp;L ₹</th><th>P&amp;L %</th>
-              </tr>
-            </thead>
-            <tbody id="invTbody">
-              <tr><td colspan="10" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── IPO ── -->
-    <section class="tab-panel" id="tab-ipo">
-      <div class="panel-header">
-        <h2 class="panel-title">IPO Investments</h2>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="data-table" id="ipoTable">
-            <thead>
-              <tr>
-                <th>Company</th><th>Date</th><th>Issue ₹</th>
-                <th>Allotted</th><th>Listing ₹</th><th>Curr ₹</th>
-                <th>Invested ₹</th><th>P&amp;L ₹</th><th>P&amp;L %</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="ipoTbody">
-              <tr><td colspan="10" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── TRANSACTION LOG ── -->
-    <section class="tab-panel" id="tab-transactions">
-      <div class="panel-header">
-        <h2 class="panel-title">Transaction Log</h2>
-        <input type="text" class="search-box" id="txSearch" placeholder="Search…" />
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table class="data-table" id="txTable">
-            <thead>
-              <tr>
-                <th>Date</th><th>Instrument</th><th>Action</th>
-                <th>Price ₹</th><th>Qty</th><th>Amount ₹</th><th>Charges ₹</th><th>Net ₹</th>
-              </tr>
-            </thead>
-            <tbody id="txTbody">
-              <tr><td colspan="8" class="empty-row">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── ANALYTICS ── -->
-    <section class="tab-panel" id="tab-analytics">
-      <div class="panel-header">
-        <h2 class="panel-title">Analytics</h2>
-      </div>
-      <div class="analytics-grid">
-        <div class="card card-chart-lg">
-          <div class="card-label">Cumulative P&amp;L Over Time</div>
-          <canvas id="cumulativePnlChart" height="200"></canvas>
-        </div>
-        <div class="card card-chart-lg">
-          <div class="card-label">Daily P&amp;L</div>
-          <canvas id="dailyPnlChart" height="200"></canvas>
-        </div>
-        <div class="card card-chart-md">
-          <div class="card-label">Win / Loss Distribution</div>
-          <canvas id="winLossChart" height="220"></canvas>
-        </div>
-        <div class="card card-chart-md">
-          <div class="card-label">Holdings by Sector</div>
-          <canvas id="sectorChart" height="220"></canvas>
-        </div>
-        <div class="card card-chart-lg">
-          <div class="card-label">Daily Trade Volume</div>
-          <canvas id="volumeChart" height="180"></canvas>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ═══════════════════════════════════════════════════
-       SETTINGS MODAL
-  ═══════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>⚙ Configuration</h3>
-        <button class="modal-close" id="closeSettings">✕</button>
-      </div>
-      <div class="modal-body">
-
-        <div class="setting-group">
-          <label class="setting-label">Data Source</label>
-          <select class="filter-select" id="dataSourceSelect" style="width:100%">
-            <option value="demo">Demo Data (built-in)</option>
-            <option value="appsscript">Google Apps Script Web App</option>
-          </select>
-        </div>
-
-        <div class="setting-group" id="appsScriptGroup" style="display:none">
-          <label class="setting-label">Apps Script Web App URL</label>
-          <input type="text" class="search-box" id="sheetsUrlInput"
-            placeholder="https://script.google.com/macros/s/…/exec"
-            style="width:100%;box-sizing:border-box" />
-          <p class="setting-hint">
-            Deploy your Google Sheet as a Web App (Extensions → Apps Script → Deploy → Web App).
-            See README.md for the exact Apps Script code to use.
-          </p>
-        </div>
-
-        <div class="setting-group">
-          <label class="setting-label">Auto-Refresh</label>
-          <select class="filter-select" id="refreshInterval" style="width:100%">
-            <option value="0">Disabled</option>
-            <option value="300000" selected>Every 5 minutes</option>
-            <option value="600000">Every 10 minutes</option>
-            <option value="1800000">Every 30 minutes</option>
-          </select>
-        </div>
-
-      </div>
-      <div class="modal-footer">
-        <button class="btn-primary" id="saveSettings">Save &amp; Reload</button>
-        <button class="btn-ghost" id="cancelSettings">Cancel</button>
-      </div>
+    <!-- Error banner -->
+    <div class="error-banner" id="errorBanner">
+      <div class="error-icon">⚠</div>
+      <div class="error-msg" id="errorMsg">Connection failed. Check the GAS_URL in the script and ensure the Apps Script is deployed to Anyone.</div>
+      <button class="btn" style="flex-shrink:0" onclick="doRefresh()">Retry</button>
     </div>
-  </div>
 
-  <!-- ═══════════════════════════════════════════════════
-       SCRIPTS  (order matters)
-  ═══════════════════════════════════════════════════ -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/sheets.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/tables.js"></script>
-  <script src="js/app.js"></script>
+    <!-- ─── DASHBOARD ─── -->
+    <section class="tab-section active" id="tab-dashboard">
+      <div class="page-head">
+        <h1>Portfolio <em>Overview</em></h1>
+        <p>Live data · Google Sheets · Auto-refresh every 5 min</p>
+      </div>
 
+      <div class="cards-grid" id="kpiCards"></div>
+
+      <div class="glow-sep"></div>
+
+      <div class="charts-grid">
+        <div class="chart-card span-2">
+          <div class="chart-label">Cumulative Net P&L Over Time</div>
+          <div class="chart-wrap h-md"><canvas id="chartCumPnl"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Win / Loss / Breakeven</div>
+          <div class="chart-wrap"><canvas id="chartWinLoss"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Daily P&L (Last 30 Days)</div>
+          <div class="chart-wrap"><canvas id="chartDailyPnl"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── F&O TRADES ─── -->
+    <section class="tab-section" id="tab-fo">
+      <div class="page-head">
+        <h1>F&amp;O <em>Trades</em></h1>
+        <p>Futures &amp; Options trade log</p>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Trade Records</span>
+            <span class="row-count" id="foCount">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="foFilterWL" onchange="renderTable('fo')">
+              <option value="">All Results</option>
+              <option value="win">Wins Only</option>
+              <option value="loss">Losses Only</option>
+            </select>
+            <input class="search-input" id="foSearch" placeholder="Search trades…" oninput="renderTable('fo')">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr id="foHead"></tr></thead><tbody id="foBody"></tbody></table>
+        </div>
+        <div class="table-foot" id="foFoot"></div>
+      </div>
+    </section>
+
+    <!-- ─── HOLDINGS ─── -->
+    <section class="tab-section" id="tab-holdings">
+      <div class="page-head">
+        <h1>Stock <em>Holdings</em></h1>
+        <p>Current portfolio positions</p>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Holdings</span>
+            <span class="row-count" id="holdCount">—</span>
+          </div>
+          <div class="table-controls">
+            <input class="search-input" id="holdSearch" placeholder="Search holdings…" oninput="renderTable('hold')">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr id="holdHead"></tr></thead><tbody id="holdBody"></tbody></table>
+        </div>
+        <div class="table-foot" id="holdFoot"></div>
+      </div>
+    </section>
+
+    <!-- ─── INVESTMENTS ─── -->
+    <section class="tab-section" id="tab-investments">
+      <div class="page-head">
+        <h1>Individual <em>Investments</em></h1>
+        <p>Transaction-level investment history</p>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Investments</span>
+            <span class="row-count" id="invCount">—</span>
+          </div>
+          <div class="table-controls">
+            <input class="search-input" id="invSearch" placeholder="Search…" oninput="renderTable('inv')">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr id="invHead"></tr></thead><tbody id="invBody"></tbody></table>
+        </div>
+        <div class="table-foot" id="invFoot"></div>
+      </div>
+    </section>
+
+    <!-- ─── IPO ─── -->
+    <section class="tab-section" id="tab-ipo">
+      <div class="page-head">
+        <h1>IPO <em>Tracker</em></h1>
+        <p>IPO investments &amp; allotment status</p>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">IPO Records</span>
+            <span class="row-count" id="ipoCount">—</span>
+          </div>
+          <div class="table-controls">
+            <input class="search-input" id="ipoSearch" placeholder="Search IPOs…" oninput="renderTable('ipo')">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr id="ipoHead"></tr></thead><tbody id="ipoBody"></tbody></table>
+        </div>
+        <div class="table-foot" id="ipoFoot"></div>
+      </div>
+    </section>
+
+    <!-- ─── TRANSACTIONS ─── -->
+    <section class="tab-section" id="tab-transactions">
+      <div class="page-head">
+        <h1>Transaction <em>Log</em></h1>
+        <p>Full historical trade records</p>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Transactions</span>
+            <span class="row-count" id="txCount">—</span>
+          </div>
+          <div class="table-controls">
+            <input class="search-input" id="txSearch" placeholder="Search…" oninput="renderTable('tx')">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr id="txHead"></tr></thead><tbody id="txBody"></tbody></table>
+        </div>
+        <div class="table-foot" id="txFoot"></div>
+      </div>
+    </section>
+
+    <!-- ─── ANALYTICS ─── -->
+    <section class="tab-section" id="tab-analytics">
+      <div class="page-head">
+        <h1>Performance <em>Analytics</em></h1>
+        <p>Deep-dive charts &amp; breakdowns</p>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card span-2">
+          <div class="chart-label">Daily Trade Volume</div>
+          <div class="chart-wrap"><canvas id="chartVolume"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Holdings Distribution (by Value)</div>
+          <div class="chart-wrap"><canvas id="chartHoldDist"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Monthly P&L</div>
+          <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="chart-card span-2">
+          <div class="chart-label">Instrument-wise Net P&L (Top 15)</div>
+          <div class="chart-wrap h-md"><canvas id="chartInstrument"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</main><!-- /main -->
+
+<!-- ═════════════════════════════════════════════════════
+     APPLICATION SCRIPT
+═════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ──────────────────────────────────────────
+   CONFIG — Edit GAS_URL to your deployed script
+────────────────────────────────────────── */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjVD_AiqdcUycAa5p6o7hxQWuMlAdraLYVMciYCWupMgTyXmhpj78oMc9EASSpQPuskw/exec';
+const PAGE_SIZE = 30;
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+
+/* ──────────────────────────────────────────
+   APP STATE
+────────────────────────────────────────── */
+const STATE = {
+  raw: {},            // raw JSON from GAS
+  sheets: {           // { headers:[], data:[][] }
+    fo: { headers: [], data: [] },
+    hold: { headers: [], data: [] },
+    inv:  { headers: [], data: [] },
+    ipo:  { headers: [], data: [] },
+    tx:   { headers: [], data: [] },
+  },
+  sort: {
+    fo:   { col: null, dir: 1 },
+    hold: { col: null, dir: 1 },
+    inv:  { col: null, dir: 1 },
+    ipo:  { col: null, dir: 1 },
+    tx:   { col: null, dir: 1 },
+  },
+  page: { fo: 1, hold: 1, inv: 1, ipo: 1, tx: 1 },
+  charts: {},
+};
+
+/* ──────────────────────────────────────────
+   FORMATTERS
+────────────────────────────────────────── */
+const INR = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const INR0 = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+const F = {
+  currency: v => { const n = +v; return isNaN(n) ? (v || '—') : '₹' + INR.format(Math.abs(n)); },
+  pnl:      v => { const n = +v; return isNaN(n) ? (v || '—') : (n >= 0 ? '+₹' : '−₹') + INR.format(Math.abs(n)); },
+  pct:      v => { const n = +v; return isNaN(n) ? (v || '—') : (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; },
+  qty:      v => { const n = +v; return isNaN(n) ? (v || '—') : INR0.format(n); },
+  date:     v => {
+    if (!v || v === '') return '—';
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
+  },
+  plain:    v => (v === null || v === undefined || v === '') ? '—' : String(v),
+};
+
+/* ──────────────────────────────────────────
+   COLUMN TYPE DETECTION
+────────────────────────────────────────── */
+function colType(h) {
+  const s = String(h).toLowerCase();
+  if (s.includes('p&l') || s.includes('pnl') || s.includes('profit') || s.includes('net') || s.includes('gross'))
+    return 'pnl';
+  if (s.includes('%') || s.includes('percent') || s.includes(' pct') || s.includes('return') || s.includes('rate'))
+    return 'pct';
+  if (s.includes('price') || s.includes('value') || s.includes('invest') || s.includes('amount') ||
+      s.includes('charges') || s.includes('avg') || s.includes('cost') || s.includes('ltp') ||
+      s.includes('current') || s.includes('entry') || s.includes('exit'))
+    return 'currency';
+  if (s.includes('qty') || s.includes('quantity') || s.includes('lots') || s.includes('shares') || s.includes('filled'))
+    return 'qty';
+  if (s.includes('date') || s.includes('time'))
+    return 'date';
+  return 'plain';
+}
+
+function renderCell(val, header) {
+  const t = colType(header);
+  const n = +val;
+  switch (t) {
+    case 'pnl': {
+      if (isNaN(n)) return { text: F.plain(val), cls: 'cell-mute' };
+      return { text: F.pnl(n), cls: n > 0 ? 'cell-gain' : n < 0 ? 'cell-loss' : 'cell-mute' };
+    }
+    case 'pct': {
+      if (isNaN(n)) return { text: F.plain(val), cls: 'cell-mute' };
+      return { text: F.pct(n), cls: n > 0 ? 'cell-gain' : n < 0 ? 'cell-loss' : 'cell-mute' };
+    }
+    case 'currency':
+      return { text: F.currency(val), cls: 'cell-mute' };
+    case 'qty':
+      return { text: F.qty(val), cls: 'cell-mute' };
+    case 'date':
+      return { text: F.date(val), cls: 'cell-dim' };
+    default:
+      return { text: F.plain(val), cls: '' };
+  }
+}
+
+/* ──────────────────────────────────────────
+   SHEET PARSER
+────────────────────────────────────────── */
+function parseSheet(rows) {
+  if (!Array.isArray(rows) || rows.length < 1) return { headers: [], data: [] };
+  const headers = rows[0].map(h => String(h || '').trim());
+  const data = rows.slice(1).filter(r => Array.isArray(r) && r.some(c => c !== '' && c !== null && c !== undefined));
+  // Pad each row to headers length
+  const padded = data.map(r => {
+    const out = [...r];
+    while (out.length < headers.length) out.push('');
+    return out;
+  });
+  return { headers, data: padded };
+}
+
+/* ──────────────────────────────────────────
+   DATA LOADING
+────────────────────────────────────────── */
+async function loadData() {
+  setConn('loading', 'Fetching…');
+  setLoader(true, 'Connecting to Google Sheets…');
+  document.getElementById('refreshBtn').disabled = true;
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-cache',
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    handleData(json);
+  } catch (err) {
+    console.warn('Direct fetch failed, trying JSONP…', err);
+    try {
+      const json = await jsonpFetch(GAS_URL);
+      handleData(json);
+    } catch (e2) {
+      showError('Could not connect to Google Sheets. ' + err.message + '. Make sure the Apps Script is deployed as "Anyone" can access.');
+      setConn('error', 'Connection failed');
+      setLoader(false);
+    }
+  }
+
+  document.getElementById('refreshBtn').disabled = false;
+}
+
+function jsonpFetch(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__ft_cb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('JSONP timeout'));
+    }, 12000);
+    window[cbName] = data => { clearTimeout(timer); cleanup(); resolve(data); };
+    script.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('JSONP script load failed')); };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    function cleanup() { delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+    document.head.appendChild(script);
+  });
+}
+
+/* normalize key aliases from different GAS backends */
+function normalizeKey(json, ...keys) {
+  for (const k of keys) {
+    if (json[k] && Array.isArray(json[k]) && json[k].length > 0) return json[k];
+  }
+  return [];
+}
+
+function handleData(json) {
+  STATE.raw = json;
+
+  const rawFO   = normalizeKey(json, 'foTrades',    'fo_trades',    'FO',    'fo',    "F&O");
+  const rawHold = normalizeKey(json, 'holdings',    'Holdings',     'holdingsData');
+  const rawInv  = normalizeKey(json, 'investments', 'Investments',  'individualInvestments');
+  const rawIPO  = normalizeKey(json, 'ipos',        'IPO',          'ipo',   'ipoData');
+  const rawTx   = normalizeKey(json, 'transactions','transactionLog','TransactionLog','log','Transactions');
+
+  STATE.sheets.fo   = parseSheet(rawFO);
+  STATE.sheets.hold = parseSheet(rawHold);
+  STATE.sheets.inv  = parseSheet(rawInv);
+  STATE.sheets.ipo  = parseSheet(rawIPO);
+  STATE.sheets.tx   = parseSheet(rawTx);
+
+  // Update nav badges
+  const counts = { fo: STATE.sheets.fo.data.length, holdings: STATE.sheets.hold.data.length,
+                   investments: STATE.sheets.inv.data.length, ipo: STATE.sheets.ipo.data.length,
+                   transactions: STATE.sheets.tx.data.length };
+  Object.entries(counts).forEach(([k, v]) => {
+    const el = document.getElementById('badge-' + k);
+    if (el) el.textContent = v;
+  });
+
+  hideError();
+  setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
+  document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString('en-IN');
+
+  renderDashboard();
+  renderTable('fo');
+  renderTable('hold');
+  renderTable('inv');
+  renderTable('ipo');
+  renderTable('tx');
+  renderAnalytics();
+
+  setLoader(false);
+}
+
+/* ──────────────────────────────────────────
+   TABLE RENDERING ENGINE
+────────────────────────────────────────── */
+const TABLE_MAP = {
+  fo:   { head: 'foHead',   body: 'foBody',   foot: 'foFoot',   count: 'foCount',   search: 'foSearch' },
+  hold: { head: 'holdHead', body: 'holdBody', foot: 'holdFoot', count: 'holdCount', search: 'holdSearch' },
+  inv:  { head: 'invHead',  body: 'invBody',  foot: 'invFoot',  count: 'invCount',  search: 'invSearch' },
+  ipo:  { head: 'ipoHead',  body: 'ipoBody',  foot: 'ipoFoot',  count: 'ipoCount',  search: 'ipoSearch' },
+  tx:   { head: 'txHead',   body: 'txBody',   foot: 'txFoot',   count: 'txCount',   search: 'txSearch' },
+};
+
+function renderTable(key) {
+  const ids = TABLE_MAP[key];
+  const { headers, data } = STATE.sheets[key] || { headers: [], data: [] };
+  const searchQ = (document.getElementById(ids.search)?.value || '').toLowerCase().trim();
+  const sort = STATE.sort[key];
+  const page = STATE.page[key];
+
+  /* -- Filter -- */
+  let rows = data;
+
+  // Special FO win/loss filter
+  if (key === 'fo') {
+    const wl = document.getElementById('foFilterWL')?.value;
+    if (wl) {
+      const pIdx = headers.findIndex(h => colType(h) === 'pnl');
+      if (pIdx >= 0) {
+        rows = rows.filter(r => {
+          const n = +r[pIdx];
+          if (wl === 'win')  return n > 0;
+          if (wl === 'loss') return n < 0;
+          return true;
+        });
+      }
+    }
+  }
+
+  // Text search
+  if (searchQ) {
+    rows = rows.filter(r => r.some(c => String(c).toLowerCase().includes(searchQ)));
+  }
+
+  /* -- Sort -- */
+  if (sort.col !== null && sort.col < headers.length) {
+    rows = [...rows].sort((a, b) => {
+      const av = a[sort.col]; const bv = b[sort.col];
+      const an = +av; const bn = +bv;
+      if (!isNaN(an) && !isNaN(bn)) return (an - bn) * sort.dir;
+      return String(av || '').localeCompare(String(bv || '')) * sort.dir;
+    });
+  }
+
+  /* -- Count -- */
+  const totalRows = rows.length;
+  const el = document.getElementById(ids.count);
+  if (el) el.textContent = totalRows + ' rows';
+
+  /* -- Paginate -- */
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const curPage = Math.min(page, totalPages);
+  STATE.page[key] = curPage;
+  const start = (curPage - 1) * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
+
+  /* -- Render head -- */
+  const headEl = document.getElementById(ids.head);
+  headEl.innerHTML = headers.map((h, i) => {
+    const sc = sort.col === i ? (sort.dir === 1 ? 's-asc' : 's-desc') : '';
+    return `<th class="${sc}" onclick="doSort('${key}',${i})">${h}</th>`;
+  }).join('');
+
+  /* -- Render body -- */
+  const bodyEl = document.getElementById(ids.body);
+  if (slice.length === 0) {
+    bodyEl.innerHTML = `<tr class="empty-row"><td colspan="${Math.max(headers.length, 1)}">No records found</td></tr>`;
+  } else {
+    bodyEl.innerHTML = slice.map(row => {
+      const cells = headers.map((h, i) => {
+        const { text, cls } = renderCell(row[i], h);
+        return `<td class="${cls}">${escHTML(text)}</td>`;
+      }).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+  }
+
+  /* -- Pagination -- */
+  const footEl = document.getElementById(ids.foot);
+  if (totalPages <= 1) {
+    footEl.innerHTML = '';
+  } else {
+    const pages = buildPageNumbers(curPage, totalPages);
+    footEl.innerHTML = `
+      <span class="page-info">Page ${curPage} of ${totalPages} (${totalRows} records)</span>
+      <div class="page-btns">
+        <button class="page-btn" onclick="goPage('${key}',${curPage-1})" ${curPage<=1?'disabled':''}>‹</button>
+        ${pages.map(p => p === '…'
+          ? `<span class="page-btn" style="cursor:default;opacity:0.4">…</span>`
+          : `<button class="page-btn ${p===curPage?'active':''}" onclick="goPage('${key}',${p})">${p}</button>`
+        ).join('')}
+        <button class="page-btn" onclick="goPage('${key}',${curPage+1})" ${curPage>=totalPages?'disabled':''}>›</button>
+      </div>
+    `;
+  }
+}
+
+function buildPageNumbers(cur, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [1];
+  if (cur > 3) pages.push('…');
+  for (let p = Math.max(2, cur-1); p <= Math.min(total-1, cur+1); p++) pages.push(p);
+  if (cur < total - 2) pages.push('…');
+  pages.push(total);
+  return pages;
+}
+
+function doSort(key, colIdx) {
+  const s = STATE.sort[key];
+  if (s.col === colIdx) s.dir *= -1; else { s.col = colIdx; s.dir = 1; }
+  STATE.page[key] = 1;
+  renderTable(key);
+}
+
+function goPage(key, n) {
+  STATE.page[key] = n;
+  renderTable(key);
+}
+
+/* ──────────────────────────────────────────
+   DASHBOARD KPI CARDS
+────────────────────────────────────────── */
+function renderDashboard() {
+  const { headers: foH, data: foD } = STATE.sheets.fo;
+  const { headers: hH,  data: hD  } = STATE.sheets.hold;
+
+  function findCol(headers, ...needles) {
+    for (const n of needles) {
+      const i = headers.findIndex(h => h.toLowerCase().includes(n.toLowerCase()));
+      if (i >= 0) return i;
+    }
+    return -1;
+  }
+
+  // F&O stats
+  const netPnlIdx = findCol(foH, 'net p&l', 'net_pnl', 'netpnl', 'net pnl', 'pnl', 'p&l', 'profit');
+  const grossIdx  = findCol(foH, 'gross');
+  const chargeIdx = findCol(foH, 'charge', 'brokerage', 'tax', 'fee');
+  const instrIdx  = findCol(foH, 'instrument', 'symbol', 'scrip');
+
+  let totalNetPnl = 0, wins = 0, losses = 0, breakeven = 0;
+  let totalGross = 0, totalCharges = 0;
+  foD.forEach(row => {
+    const n = +(netPnlIdx >= 0 ? row[netPnlIdx] : 0);
+    const g = +(grossIdx >= 0 ? row[grossIdx] : 0);
+    const c = +(chargeIdx >= 0 ? row[chargeIdx] : 0);
+    if (!isNaN(n)) totalNetPnl += n;
+    if (!isNaN(g)) totalGross += g;
+    if (!isNaN(c)) totalCharges += c;
+    if (!isNaN(n)) { if (n > 0) wins++; else if (n < 0) losses++; else breakeven++; }
+  });
+
+  const totalTrades = foD.length;
+  const winRate = totalTrades > 0 ? (wins / totalTrades * 100).toFixed(1) : '0.0';
+
+  // Holdings stats
+  const invIdx = findCol(hH, 'total invest', 'invested', 'invest', 'cost');
+  const curIdx = findCol(hH, 'current value', 'curr val', 'market val', 'ltp val', 'current');
+
+  let totalInvested = 0, totalCurrent = 0;
+  hD.forEach(row => {
+    const i = +(invIdx >= 0 ? row[invIdx] : 0);
+    const c = +(curIdx >= 0 ? row[curIdx] : 0);
+    if (!isNaN(i) && i > 0) totalInvested += i;
+    if (!isNaN(c) && c > 0) totalCurrent += c;
+  });
+
+  const holdPnl = totalCurrent - totalInvested;
+  const holdPct = totalInvested > 0 ? (holdPnl / totalInvested * 100) : 0;
+
+  const kpis = [
+    {
+      label: 'F&O Net P&L',
+      value: F.pnl(totalNetPnl),
+      valCls: totalNetPnl >= 0 ? 'gain' : 'loss',
+      sub: `${totalTrades} total trades`,
+      cardCls: totalNetPnl >= 0 ? 'c-gain' : 'c-loss',
+    },
+    {
+      label: 'Win Rate',
+      value: winRate + '%',
+      valCls: +winRate >= 50 ? 'gain' : 'loss',
+      sub: `${wins}W · ${losses}L · ${breakeven}BE`,
+      cardCls: +winRate >= 50 ? 'c-gain' : 'c-loss',
+    },
+    {
+      label: 'Gross P&L',
+      value: F.pnl(totalGross),
+      valCls: totalGross >= 0 ? 'gain' : 'loss',
+      sub: `Charges: ${F.currency(totalCharges)}`,
+      cardCls: 'c-accent',
+    },
+    {
+      label: 'Total Trades',
+      value: totalTrades.toString(),
+      valCls: '',
+      sub: `Holdings: ${hD.length} stocks`,
+      cardCls: 'c-sky',
+    },
+    {
+      label: 'Holdings Invested',
+      value: F.currency(totalInvested),
+      valCls: 'sky',
+      sub: `${hD.length} positions`,
+      cardCls: 'c-sky',
+    },
+    {
+      label: 'Holdings Current',
+      value: F.currency(totalCurrent),
+      valCls: '',
+      sub: `Market value`,
+      cardCls: 'c-accent',
+    },
+    {
+      label: 'Holdings P&L',
+      value: F.pnl(holdPnl),
+      valCls: holdPnl >= 0 ? 'gain' : 'loss',
+      sub: F.pct(holdPct) + ' returns',
+      cardCls: holdPnl >= 0 ? 'c-gain' : 'c-loss',
+    },
+    {
+      label: 'IPOs Tracked',
+      value: STATE.sheets.ipo.data.length.toString(),
+      valCls: '',
+      sub: `${STATE.sheets.inv.data.length} investment records`,
+      cardCls: 'c-warn',
+    },
+  ];
+
+  document.getElementById('kpiCards').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.cardCls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value ${k.valCls}">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+
+  // Charts on dashboard
+  renderCumPnlChart();
+  renderWinLossChart(wins, losses, breakeven);
+  renderDailyPnlChart();
+}
+
+/* ──────────────────────────────────────────
+   CHART HELPERS
+────────────────────────────────────────── */
+const C = {
+  gain: '#4ade80', gainA: 'rgba(74,222,128,0.7)',
+  loss: '#f87171', lossA: 'rgba(248,113,113,0.7)',
+  accent: '#00d2aa', accentA: 'rgba(0,210,170,0.15)',
+  sky: '#38bdf8',
+  grid: 'rgba(255,255,255,0.04)',
+  tick: '#3d6572',
+  mono: "'JetBrains Mono', monospace",
+  tooltip: {
+    backgroundColor: '#0d2035',
+    borderColor: 'rgba(0,210,170,0.3)',
+    borderWidth: 1,
+    titleColor: '#3d6572',
+    bodyColor: '#dff2ec',
+    bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+    titleFont: { family: "'JetBrains Mono', monospace", size: 10 },
+  }
+};
+
+function axisBase() {
+  return {
+    grid: { color: C.grid },
+    ticks: { color: C.tick, font: { family: C.mono, size: 10 } },
+    border: { color: 'rgba(255,255,255,0.05)' }
+  };
+}
+
+function destroyChart(key) {
+  if (STATE.charts[key]) {
+    STATE.charts[key].destroy();
+    delete STATE.charts[key];
+  }
+}
+
+function pnlBarColors(values) {
+  return {
+    bg: values.map(v => v >= 0 ? C.gainA : C.lossA),
+    border: values.map(v => v >= 0 ? C.gain : C.loss),
+  };
+}
+
+/* ──────────────────────────────────────────
+   CHART: CUMULATIVE PNL
+────────────────────────────────────────── */
+function renderCumPnlChart() {
+  const { headers, data } = STATE.sheets.fo;
+  const dIdx = headers.findIndex(h => h.toLowerCase().includes('date'));
+  const pIdx = headers.findIndex(h => colType(h) === 'pnl');
+  if (dIdx < 0 || pIdx < 0) return;
+
+  const byDate = {};
+  data.forEach(r => {
+    const d = String(r[dIdx]).split('T')[0];
+    byDate[d] = (byDate[d] || 0) + (+r[pIdx] || 0);
+  });
+  const sorted = Object.entries(byDate).sort((a,b) => a[0] < b[0] ? -1 : 1);
+  let cum = 0;
+  const labels = sorted.map(([d]) => d);
+  const values = sorted.map(([,v]) => { cum += v; return +cum.toFixed(2); });
+
+  destroyChart('cumPnl');
+  const ctx = document.getElementById('chartCumPnl');
+  if (!ctx) return;
+  STATE.charts.cumPnl = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: C.accent,
+        backgroundColor: ctx2 => {
+          const g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 300);
+          g.addColorStop(0, 'rgba(0,210,170,0.2)');
+          g.addColorStop(1, 'rgba(0,210,170,0.01)');
+          return g;
+        },
+        borderWidth: 2, fill: true, tension: 0.35,
+        pointRadius: 2, pointHoverRadius: 6,
+        pointBackgroundColor: C.accent,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...C.tooltip, callbacks: { label: c => ' ' + F.pnl(c.raw) } }
+      },
+      scales: { x: axisBase(), y: axisBase() }
+    }
+  });
+}
+
+/* ──────────────────────────────────────────
+   CHART: WIN/LOSS DONUT
+────────────────────────────────────────── */
+function renderWinLossChart(wins, losses, breakeven) {
+  destroyChart('winLoss');
+  const ctx = document.getElementById('chartWinLoss');
+  if (!ctx) return;
+  STATE.charts.winLoss = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Wins', 'Losses', 'Breakeven'],
+      datasets: [{
+        data: [wins, losses, breakeven],
+        backgroundColor: ['rgba(74,222,128,0.75)', 'rgba(248,113,113,0.75)', 'rgba(56,189,248,0.5)'],
+        borderColor: [C.gain, C.loss, C.sky],
+        borderWidth: 1, hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '66%',
+      plugins: {
+        legend: {
+          display: true, position: 'right',
+          labels: { color: C.tick, font: { family: C.mono, size: 10 }, boxWidth: 10, padding: 14 }
+        },
+        tooltip: C.tooltip
+      }
+    }
+  });
+}
+
+/* ──────────────────────────────────────────
+   CHART: DAILY PNL
+────────────────────────────────────────── */
+function renderDailyPnlChart() {
+  const { headers, data } = STATE.sheets.fo;
+  const dIdx = headers.findIndex(h => h.toLowerCase().includes('date'));
+  const pIdx = headers.findIndex(h => colType(h) === 'pnl');
+  if (dIdx < 0 || pIdx < 0) return;
+
+  const byDate = {};
+  data.forEach(r => {
+    const d = String(r[dIdx]).split('T')[0];
+    byDate[d] = (byDate[d] || 0) + (+r[pIdx] || 0);
+  });
+  const sorted = Object.entries(byDate).sort((a,b) => a[0] < b[0] ? -1 : 1).slice(-30);
+  const vals = sorted.map(([,v]) => +v.toFixed(2));
+  const { bg, border } = pnlBarColors(vals);
+
+  destroyChart('dailyPnl');
+  const ctx = document.getElementById('chartDailyPnl');
+  if (!ctx) return;
+  STATE.charts.dailyPnl = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([d]) => d.slice(5)),
+      datasets: [{ data: vals, backgroundColor: bg, borderColor: border, borderWidth: 1, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...C.tooltip, callbacks: { label: c => ' ' + F.pnl(c.raw) } } },
+      scales: { x: axisBase(), y: axisBase() }
+    }
+  });
+}
+
+/* ──────────────────────────────────────────
+   ANALYTICS CHARTS
+────────────────────────────────────────── */
+function renderAnalytics() {
+  renderVolumeChart();
+  renderHoldDistChart();
+  renderMonthlyChart();
+  renderInstrumentChart();
+}
+
+function renderVolumeChart() {
+  const { headers, data } = STATE.sheets.fo;
+  const dIdx = headers.findIndex(h => h.toLowerCase().includes('date'));
+  if (dIdx < 0) return;
+
+  const byDate = {};
+  data.forEach(r => {
+    const d = String(r[dIdx]).split('T')[0];
+    byDate[d] = (byDate[d] || 0) + 1;
+  });
+  const sorted = Object.entries(byDate).sort((a,b) => a[0] < b[0] ? -1 : 1);
+
+  destroyChart('volume');
+  const ctx = document.getElementById('chartVolume');
+  if (!ctx) return;
+  STATE.charts.volume = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([d]) => d),
+      datasets: [{ data: sorted.map(([,v]) => v), backgroundColor: 'rgba(56,189,248,0.55)', borderColor: C.sky, borderWidth: 1, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...C.tooltip, callbacks: { label: c => ` ${c.raw} trades` } } },
+      scales: { x: axisBase(), y: { ...axisBase(), beginAtZero: true, ticks: { ...axisBase().ticks, stepSize: 1 } } }
+    }
+  });
+}
+
+function renderHoldDistChart() {
+  const { headers, data } = STATE.sheets.hold;
+  const nameIdx = headers.findIndex(h => /name|company|symbol|ticker/i.test(h));
+  const valIdx  = headers.findIndex(h => /current.*val|market.*val|ltp.*val|invest/i.test(h));
+  if (nameIdx < 0 || valIdx < 0) return;
+
+  const top = data.slice(0, 10).filter(r => +r[valIdx] > 0);
+  const vals = top.map(r => +r[valIdx] || 0);
+  const labels = top.map(r => String(r[nameIdx] || '?').split(' ')[0]);
+  const palette = ['#00d2aa','#38bdf8','#4ade80','#f87171','#a78bfa','#fbbf24','#34d399','#fb923c','#e879f9','#2dd4bf'];
+
+  destroyChart('holdDist');
+  const ctx = document.getElementById('chartHoldDist');
+  if (!ctx) return;
+  STATE.charts.holdDist = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        backgroundColor: palette.map(p => p + 'bb'),
+        borderColor: palette,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'right', labels: { color: C.tick, font: { family: C.mono, size: 9 }, boxWidth: 10, padding: 10 } },
+        tooltip: { ...C.tooltip, callbacks: { label: c => ` ${c.label}: ${F.currency(c.raw)}` } }
+      }
+    }
+  });
+}
+
+function renderMonthlyChart() {
+  const { headers, data } = STATE.sheets.fo;
+  const dIdx = headers.findIndex(h => h.toLowerCase().includes('date'));
+  const pIdx = headers.findIndex(h => colType(h) === 'pnl');
+  if (dIdx < 0 || pIdx < 0) return;
+
+  const byMonth = {};
+  data.forEach(r => {
+    const d = new Date(r[dIdx]);
+    if (isNaN(d)) return;
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    byMonth[k] = (byMonth[k] || 0) + (+r[pIdx] || 0);
+  });
+  const sorted = Object.entries(byMonth).sort((a,b) => a[0] < b[0] ? -1 : 1);
+  const vals = sorted.map(([,v]) => +v.toFixed(2));
+  const { bg, border } = pnlBarColors(vals);
+
+  destroyChart('monthly');
+  const ctx = document.getElementById('chartMonthly');
+  if (!ctx) return;
+  STATE.charts.monthly = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([d]) => d),
+      datasets: [{ data: vals, backgroundColor: bg, borderColor: border, borderWidth: 1, borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...C.tooltip, callbacks: { label: c => ' ' + F.pnl(c.raw) } } },
+      scales: { x: axisBase(), y: axisBase() }
+    }
+  });
+}
+
+function renderInstrumentChart() {
+  const { headers, data } = STATE.sheets.fo;
+  const iIdx = headers.findIndex(h => /instrument|symbol|scrip|stock/i.test(h));
+  const pIdx = headers.findIndex(h => colType(h) === 'pnl');
+  if (iIdx < 0 || pIdx < 0) return;
+
+  const byInstr = {};
+  data.forEach(r => {
+    const k = String(r[iIdx] || '?').split(/\s+/)[0].toUpperCase();
+    byInstr[k] = (byInstr[k] || 0) + (+r[pIdx] || 0);
+  });
+  const sorted = Object.entries(byInstr)
+    .map(([k,v]) => [k, +v.toFixed(2)])
+    .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .slice(0, 15);
+  const vals = sorted.map(([,v]) => v);
+  const { bg, border } = pnlBarColors(vals);
+
+  destroyChart('instrument');
+  const ctx = document.getElementById('chartInstrument');
+  if (!ctx) return;
+  STATE.charts.instrument = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([k]) => k),
+      datasets: [{ data: vals, backgroundColor: bg, borderColor: border, borderWidth: 1, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { ...C.tooltip, callbacks: { label: c => ' ' + F.pnl(c.raw) } } },
+      scales: { x: axisBase(), y: { ...axisBase(), ticks: { ...axisBase().ticks, font: { family: C.mono, size: 9 } } } }
+    }
+  });
+}
+
+/* ──────────────────────────────────────────
+   NAVIGATION
+────────────────────────────────────────── */
+const TAB_LABELS = {
+  dashboard: 'DASHBOARD', fo: 'F&O TRADES', holdings: 'HOLDINGS',
+  investments: 'INVESTMENTS', ipo: 'IPO TRACKER',
+  transactions: 'TRANSACTION LOG', analytics: 'ANALYTICS'
+};
+
+function showTab(name) {
+  document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const tab = document.getElementById('tab-' + name);
+  if (tab) tab.classList.add('active');
+  const nav = document.querySelector(`[data-tab="${name}"]`);
+  if (nav) nav.classList.add('active');
+  document.getElementById('pageTitle').textContent = TAB_LABELS[name] || name.toUpperCase();
+  closeSidebar();
+  // Re-render analytics charts if going to analytics (chart.js needs visible canvas)
+  if (name === 'analytics') setTimeout(renderAnalytics, 50);
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ──────────────────────────────────────────
+   UI HELPERS
+────────────────────────────────────────── */
+function setLoader(show, msg = '') {
+  const el = document.getElementById('globalLoader');
+  if (msg) document.getElementById('loaderMsg').textContent = msg;
+  el.classList.toggle('hidden', !show);
+}
+
+function setConn(type, text) {
+  const dot = document.getElementById('connDot');
+  dot.className = 'conn-dot ' + type;
+  document.getElementById('connText').textContent = text;
+}
+
+function showError(msg) {
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('errorBanner').classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorBanner').classList.remove('show');
+}
+
+function escHTML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function doRefresh() {
+  // Reset pages
+  Object.keys(STATE.page).forEach(k => STATE.page[k] = 1);
+  await loadData();
+}
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+showTab('dashboard');
+loadData();
+setInterval(doRefresh, AUTO_REFRESH_MS);
+</script>
 </body>
 </html>
