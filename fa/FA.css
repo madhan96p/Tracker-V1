@@ -1,0 +1,45 @@
+/* fa/FA.css */
+
+/* Sticky first two columns in the FA table */
+#faTableWrap { overflow-x: auto; }
+
+#faTableWrap table th:nth-child(1),
+#faTableWrap table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  background: var(--bg-3);
+  z-index: 5;
+  border-right: 1px solid var(--border);
+}
+#faTableWrap table th:nth-child(2),
+#faTableWrap table td:nth-child(2) {
+  position: sticky;
+  left: 72px; /* width of ticker column */
+  background: var(--bg-3);
+  z-index: 5;
+  border-right: 1px solid var(--border-2);
+}
+#faTableWrap table tr:hover td:nth-child(1),
+#faTableWrap table tr:hover td:nth-child(2) {
+  background: var(--bg-4);
+}
+
+/* Health score color scale */
+.health-high  { color: var(--gain); }
+.health-mid   { color: var(--warn); }
+.health-low   { color: var(--loss); }
+
+/* Graham analysis */
+.undervalued   { color: var(--gain); }
+.overvalued    { color: var(--loss); }
+.fair-value    { color: var(--sky);  }
+
+/* Notes column — allow wrapping */
+td.notes-col {
+  white-space: normal;
+  min-width: 140px;
+  max-width: 200px;
+  font-size: 0.65rem;
+  color: var(--t4);
+  line-height: 1.4;
+}

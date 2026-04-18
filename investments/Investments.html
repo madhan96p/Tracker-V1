@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investments — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Investments.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Individual <em>Investments</em></h1>
+        <p>Transaction-level equity · Investments sheet · 3 tables handled separately</p>
+      </div>
+
+      <div class="cards-grid" id="invKpis"></div>
+
+      <!-- Sub-tab switcher -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-target="subHoldings" onclick="showSubTab(this,'subHoldings')">📦 Holdings</button>
+        <button class="sub-tab"        data-target="subIPOs"     onclick="showSubTab(this,'subIPOs')">🏛 IPOs</button>
+      </div>
+
+      <!-- Holdings sub-table -->
+      <div id="subHoldings" class="sub-section">
+        <div class="table-card">
+          <div class="table-top">
+            <div class="table-top-left">
+              <span class="table-label">Holdings Transactions</span>
+              <span class="row-count" id="invHoldCount">—</span>
+            </div>
+            <div class="table-controls">
+              <input class="search-input" id="invHoldSearch" placeholder="Search company…" oninput="filterInvHold()">
+            </div>
+          </div>
+          <div id="invHoldTable"></div>
+        </div>
+      </div>
+
+      <!-- IPO sub-table -->
+      <div id="subIPOs" class="sub-section" style="display:none">
+        <div class="table-card">
+          <div class="table-top">
+            <div class="table-top-left">
+              <span class="table-label">IPO Investments</span>
+              <span class="row-count" id="invIpoCount">—</span>
+            </div>
+            <div class="table-controls">
+              <input class="search-input" id="invIpoSearch" placeholder="Search IPO…" oninput="filterInvIpo()">
+            </div>
+          </div>
+          <div id="invIpoTable"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Investments.js"></script>
+</body>
+</html>

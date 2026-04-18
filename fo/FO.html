@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F&O Trades — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="FO.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+      <div class="page-head">
+        <h1>F&amp;O <em>Trades</em></h1>
+        <p>Futures &amp; Options · My Calc vs Mail Confirmation · Slippage audit</p>
+      </div>
+      <div class="cards-grid" id="foKpis"></div>
+      <div class="fo-demat-bar" id="foDematBar"></div>
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Table1 — F&amp;O Trades</span>
+            <span class="row-count" id="foCount">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="foInstrFilter" onchange="applyFOFilters()"><option value="">All Instruments</option></select>
+            <select class="filter-select" id="foWLFilter" onchange="applyFOFilters()">
+              <option value="">All Results</option>
+              <option value="win">Wins</option>
+              <option value="loss">Losses</option>
+              <option value="be">Breakeven</option>
+            </select>
+            <input class="search-input" id="foSearch" placeholder="Search instrument…" oninput="applyFOFilters()">
+          </div>
+        </div>
+        <div id="foTable"></div>
+      </div>
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="FO.js"></script>
+</body>
+</html>

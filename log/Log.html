@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Log — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Log.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Trade Transaction <em>Log</em></h1>
+        <p>Daily aggregated trades · 3rd table in Investments sheet · Running total</p>
+      </div>
+
+      <div class="cards-grid" id="logKpis"></div>
+
+      <!-- Running total chart -->
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-label">Running Portfolio Total</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartRunTotal"></canvas></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Trade_Transaction_Log</span>
+            <span class="row-count" id="logCount">—</span>
+          </div>
+          <div class="table-controls">
+            <input class="search-input" id="logSearch" placeholder="Search date…" oninput="filterLog()">
+          </div>
+        </div>
+        <div id="logTable"></div>
+      </div>
+
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Log.js"></script>
+</body>
+</html>

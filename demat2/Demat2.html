@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demat 2 — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Demat2.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Demat 2 <em>Account</em></h1>
+        <p>Sheet: "Demat 2 76k" · Table: "Demat 2 investments" · Separate account</p>
+      </div>
+
+      <div class="cards-grid" id="d2Kpis"></div>
+
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Demat 2 Investments</span>
+            <span class="row-count" id="d2Count">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="d2PnlFilter" onchange="filterD2()">
+              <option value="">All</option>
+              <option value="profit">Profit</option>
+              <option value="loss">Loss</option>
+            </select>
+            <input class="search-input" id="d2Search" placeholder="Search company…" oninput="filterD2()">
+          </div>
+        </div>
+        <div id="d2Table"></div>
+      </div>
+
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Demat2.js"></script>
+</body>
+</html>

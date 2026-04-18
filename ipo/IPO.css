@@ -1,0 +1,5 @@
+/* ipo/IPO.css */
+/* IPO-specific status badge colors */
+.ipo-allotted { color: var(--gain); }
+.ipo-pending  { color: var(--warn); }
+.ipo-none     { color: var(--loss); }

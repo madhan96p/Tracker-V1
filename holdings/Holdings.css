@@ -1,0 +1,8 @@
+/* holdings/Holdings.css */
+
+/* Sentinel highlight on hover */
+tr:hover .badge { opacity: 0.9; }
+
+/* Gain/loss row tinting for strong signals */
+tr.row-buy-dip:hover td    { background: rgba(74,222,128,0.04); }
+tr.row-take-profit:hover td{ background: rgba(251,191,36,0.04); }

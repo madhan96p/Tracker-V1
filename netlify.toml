@@ -1,39 +1,87 @@
 # FTracker — Netlify Configuration
-# Deploys a static site directly from the repo root.
+# Zero build step — pure HTML/CSS/JS deployed from repo root.
 
 [build]
-  publish = "."       # Root contains index.html — no build step needed
-  command = ""        # Pure HTML/CSS/JS, no compilation required
+  publish = "."
+  command = ""
 
 [build.environment]
   NODE_VERSION = "20"
 
-# ─── Redirect everything to index.html (SPA fallback) ───
+# ─── SPA-style redirects — serve each .html from its folder ──────────────────
+# Redirect bare paths to their HTML files for clean URLs (optional but nice)
 [[redirects]]
-  from  = "/*"
-  to    = "/index.html"
+  from  = "/dashboard"
+  to    = "/dashboard/Dashboard.html"
   status = 200
 
-# ─── Security & Performance Headers ───
+[[redirects]]
+  from  = "/fo"
+  to    = "/fo/FO.html"
+  status = 200
+
+[[redirects]]
+  from  = "/holdings"
+  to    = "/holdings/Holdings.html"
+  status = 200
+
+[[redirects]]
+  from  = "/investments"
+  to    = "/investments/Investments.html"
+  status = 200
+
+[[redirects]]
+  from  = "/ipo"
+  to    = "/ipo/IPO.html"
+  status = 200
+
+[[redirects]]
+  from  = "/log"
+  to    = "/log/Log.html"
+  status = 200
+
+[[redirects]]
+  from  = "/analytics"
+  to    = "/analytics/Analytics.html"
+  status = 200
+
+[[redirects]]
+  from  = "/fa"
+  to    = "/fa/FA.html"
+  status = 200
+
+[[redirects]]
+  from  = "/demat2"
+  to    = "/demat2/Demat2.html"
+  status = 200
+
+# Root → Dashboard
+[[redirects]]
+  from  = "/"
+  to    = "/dashboard/Dashboard.html"
+  status = 302
+
+# ─── Security headers ─────────────────────────────────────────────────────────
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options        = "DENY"
+    X-Frame-Options        = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy        = "strict-origin-when-cross-origin"
-    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
 
+# Cache HTML pages — short TTL so refreshes get latest data
 [[headers]]
-  for = "/index.html"
+  for = "/*.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Cache JS + CSS aggressively (they rarely change mid-session)
 [[headers]]
-  for = "/*.js"
+  for = "/shared/*.js"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=3600"
 
 [[headers]]
-  for = "/*.css"
+  for = "/shared/*.css"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=3600"

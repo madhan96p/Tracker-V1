@@ -1,0 +1,10 @@
+/* log/Log.css */
+/* Running total column highlight */
+td.total-col {
+  font-weight: 600;
+  color: var(--sky);
+}
+/* Alternating row subtle tint */
+tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,0.012);
+}

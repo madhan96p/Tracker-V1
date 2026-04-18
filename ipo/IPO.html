@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPO Tracker — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="IPO.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>IPO <em>Tracker</em></h1>
+        <p>IPO investments from the Investments sheet · Allotment P&amp;L</p>
+      </div>
+
+      <div class="cards-grid" id="ipoKpis"></div>
+
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">IPO Records</span>
+            <span class="row-count" id="ipoCount">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="ipoPnlFilter" onchange="filterIPO()">
+              <option value="">All</option>
+              <option value="profit">Profit</option>
+              <option value="loss">Loss</option>
+            </select>
+            <input class="search-input" id="ipoSearch" placeholder="Search IPO…" oninput="filterIPO()">
+          </div>
+        </div>
+        <div id="ipoTable"></div>
+      </div>
+
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="IPO.js"></script>
+</body>
+</html>

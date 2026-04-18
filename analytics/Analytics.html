@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Analytics.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Performance <em>Analytics</em></h1>
+        <p>Deep-dive charts · F&amp;O + Holdings · All computed from live Sheets data</p>
+      </div>
+
+      <!-- Row 1 -->
+      <div class="charts-grid">
+        <div class="chart-card span-2">
+          <div class="chart-label">Instrument-wise Net P&amp;L (Top 15 by absolute value)</div>
+          <div class="chart-wrap" style="height:320px"><canvas id="chartInstrument"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-label">Monthly F&amp;O Net P&amp;L</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Daily Trade Volume (trades per day)</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chartVolume"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-label">Holdings Distribution by Current Value</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartHoldDist"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Sector-wise Unrealised P&amp;L</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartSector"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="charts-grid">
+        <div class="chart-card span-2">
+          <div class="chart-label">F&amp;O: My Calc P&amp;L vs Actual Mail P&amp;L (per date)</div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartCalcVsMail"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Analytics.js"></script>
+</body>
+</html>

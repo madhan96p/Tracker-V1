@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Dashboard.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Injected by components.js -->
+  <div id="nav-placeholder"></div>
+
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+      <!-- KPI Cards -->
+      <div class="page-head">
+        <h1>Portfolio <em>Overview</em></h1>
+        <p>Live · Google Sheets · Auto-refresh 5 min</p>
+      </div>
+
+      <div class="cards-grid" id="kpiCards">
+        <!-- filled by Dashboard.js -->
+      </div>
+
+      <!-- F&O Summary bar -->
+      <div class="fo-summary-bar" id="foSummaryBar"></div>
+
+      <div class="glow-sep"></div>
+
+      <!-- Charts row 1 -->
+      <div class="charts-grid">
+        <div class="chart-card span-2">
+          <div class="chart-label">Cumulative Net P&amp;L Over Time (F&amp;O)</div>
+          <div class="chart-wrap" style="height:280px"><canvas id="chartCumPnl"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Win / Loss / Breakeven</div>
+          <div class="chart-wrap" style="height:220px"><canvas id="chartWinLoss"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Daily P&amp;L — Last 30 Trading Days</div>
+          <div class="chart-wrap" style="height:220px"><canvas id="chartDailyPnl"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Holdings summary -->
+      <div class="glow-sep"></div>
+      <div class="page-head" style="margin-bottom:16px">
+        <h1>Holdings <em>Snapshot</em></h1>
+      </div>
+      <div class="table-card">
+        <div class="table-top">
+          <span class="table-label">Top Holdings by Value</span>
+          <a href="../holdings/Holdings.html" class="btn">View All →</a>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Company</th>
+                <th>Symbol</th>
+                <th>Sector</th>
+                <th>Invested</th>
+                <th>Current</th>
+                <th>Net P&amp;L</th>
+                <th>Return %</th>
+                <th>Signal</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsSnap"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Dashboard.js"></script>
+</body>
+</html>

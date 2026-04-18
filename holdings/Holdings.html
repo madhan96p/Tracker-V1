@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holdings — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="Holdings.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Stock <em>Holdings</em></h1>
+        <p>Aggregated positions · Sentinel signals · Live prices from Sheets</p>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="cards-grid" id="holdKpis"></div>
+
+      <!-- Main table -->
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">Holdings</span>
+            <span class="row-count" id="holdCount">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="sectorFilter" onchange="applyFilters()">
+              <option value="">All Sectors</option>
+            </select>
+            <select class="filter-select" id="sentinelFilter" onchange="applyFilters()">
+              <option value="">All Signals</option>
+              <option value="BUY DIP">Buy Dip</option>
+              <option value="TAKE PROFIT">Take Profit</option>
+              <option value="HOLD">Hold</option>
+            </select>
+            <input class="search-input" id="holdSearch" placeholder="Search company…" oninput="applyFilters()">
+          </div>
+        </div>
+        <div id="holdingsTable"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="Holdings.js"></script>
+</body>
+</html>

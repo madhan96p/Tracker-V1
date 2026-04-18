@@ -1,0 +1,25 @@
+/* fo/FO.css */
+.fo-demat-bar {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--t2);
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+}
+.fo-demat-bar b { color: var(--accent); }
+.fo-demat-bar .d-gain { color: var(--gain); }
+.fo-demat-bar .d-loss { color: var(--loss); }
+.fo-demat-bar .d-sky  { color: var(--sky);  }
+
+/* Slippage highlight */
+td.slip-pos { color: var(--gain); }
+td.slip-neg { color: var(--loss); }
+
+/* Time column dim */
+td.time-col { color: var(--t4); font-size: 0.65rem; }

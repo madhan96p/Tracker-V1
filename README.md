@@ -1,173 +1,165 @@
-# FTracker — F&O Portfolio Dashboard
+# FTracker v2 — F&O Portfolio Dashboard
 
-A zero-build, single-file trading dashboard that reads directly from Google Sheets  
-via Apps Script and deploys instantly to Netlify.
-
----
-
-## ⚡ Tech Stack
-
-| Layer    | Technology                  |
-|----------|-----------------------------|
-| Frontend | HTML5 + CSS3 + Vanilla JS   |
-| Charts   | Chart.js 4.4 (CDN)          |
-| Fonts    | Syne, Instrument Serif, JetBrains Mono (Google Fonts) |
-| Backend  | Google Apps Script (free)   |
-| Storage  | Google Sheets               |
-| Hosting  | Netlify (free tier)         |
-| Build    | **None** — zero build step  |
+Zero-build, multi-page HTML dashboard.  
+**Google Sheets → Apps Script → HTML/CSS/JS → Netlify**
 
 ---
 
-## 📋 Google Sheets Setup
+## ⚡ Stack
 
-### Step 1 — Sheet tab names
-Your Google Sheet must have these exact tab names (case-sensitive):
-
-| Tab Name       | Data Section        |
-|----------------|---------------------|
-| `F&O`          | F&O Trades          |
-| `Holdings Data`| Stock Holdings      |
-| `Investments`  | Individual Investments |
-| `IPO`          | IPO Records         |
-| `Transactions` | Transaction Log     |
-
-> You can change these names in `gas-backend.gs` under `SHEET_MAP`.
-
-### Step 2 — Deploy the Apps Script
-
-1. Open your Google Sheet
-2. Go to **Extensions → Apps Script**
-3. Delete the default `Code.gs` content
-4. Paste the entire contents of `gas-backend.gs`
-5. Save (Ctrl+S)
-6. Click **Deploy → New deployment**
-   - Type: **Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone** ← important!
-7. Click **Deploy** and copy the Web App URL
-
-### Step 3 — Update the Frontend URL
-
-In `index.html`, find this line near the top of the `<script>` block:
-
-```javascript
-const GAS_URL = 'https://script.google.com/macros/s/...YOUR_SCRIPT.../exec';
-```
-
-Replace the URL with the one you copied in Step 2.
-
----
-
-## 🚀 Netlify Deployment
-
-### Option A — Drag & Drop (fastest)
-1. Go to [app.netlify.com](https://app.netlify.com)
-2. Drag and drop the `ftracker/` folder onto the dashboard
-3. Done — live in seconds!
-
-### Option B — GitHub + Auto-deploy
-1. Push this folder to a GitHub repo
-2. On Netlify: **Add new site → Import from Git**
-3. Select your repo
-4. Build settings are auto-detected from `netlify.toml`
-5. Every `git push` to `main` auto-deploys
+| Layer    | Technology                           |
+|----------|--------------------------------------|
+| Frontend | HTML5 + CSS3 + Vanilla JS (ES2020)   |
+| Charts   | Chart.js 4.4 (CDN)                   |
+| Fonts    | Syne · Instrument Serif · JetBrains Mono |
+| Backend  | Google Apps Script (free)            |
+| Storage  | Google Sheets                        |
+| Hosting  | Netlify (free tier, zero build)      |
 
 ---
 
 ## 🗂 Project Structure
 
 ```
-ftracker/
-├── index.html        ← The entire app (HTML + CSS + JS, single file)
-├── netlify.toml      ← Netlify deploy config
-├── gas-backend.gs    ← Google Apps Script (paste into GAS editor)
-└── README.md         ← This file
+ftracker/ 
+│
+├── shared/
+│   ├── common.css        ← Full design system (tokens, layout, tables, badges)
+│   ├── config.js         ← GAS_URL · column maps · Sentinel colours · nav items
+│   ├── utils.js          ← Formatters (₹, %, date) · P&L calculators · Sentinel logic
+│   ├── sheets.js         ← Data fetch (CORS + JSONP fallback) · sessionStorage cache
+│   └── components.js     ← Nav inject · table builder · chart defaults · loader
+│
+├── dashboard/            ← Dashboard.html · Dashboard.css · Dashboard.js
+├── fo/                   ← FO.html · FO.css · FO.js
+├── holdings/             ← Holdings.html · Holdings.css · Holdings.js ← BUG FIXED
+├── investments/          ← Investments.html · Investments.css · Investments.js
+├── ipo/                  ← IPO.html · IPO.css · IPO.js
+├── log/                  ← Log.html · Log.css · Log.js
+├── analytics/            ← Analytics.html · Analytics.css · Analytics.js
+├── fa/                   ← FA.html · FA.css · FA.js
+├── demat2/               ← Demat2.html · Demat2.css · Demat2.js
+│
+├── apps-script.gs        ← Paste into Google Apps Script editor
+├── netlify.toml          ← Netlify config (zero-build, security headers)
+├── index.html            ← Root redirect → dashboard
+└── README.md
 ```
 
 ---
 
-## 📊 Dashboard Sections
+## 🔴 Bug Fixed: Holdings P&L
 
-| Section       | Description                                          |
-|---------------|------------------------------------------------------|
-| Dashboard     | Summary KPIs + Cumulative P&L + Win/Loss + Daily P&L |
-| F&O Trades    | Full trade log with search, filter (Win/Loss), sort, pagination |
-| Holdings      | Stock portfolio with P&L per position                |
-| Investments   | Individual investment transactions                   |
-| IPO           | IPO allotment tracker                                |
-| Transactions  | Full transaction history                             |
-| Analytics     | Volume chart, holdings distribution, monthly P&L, instrument-wise breakdown |
+**Root cause:** Column offset error — code read `Total Brokerage Paid` (col 6, ~₹145)
+as "Current Value" instead of `Current Value` (col 7).
 
----
+| Column | Index | Value (IOC example) |
+|--------|-------|---------------------|
+| Total Invested      | 5 | ₹7,049.36 |
+| Total Brokerage Paid| 6 | ₹145.99 ← old code used this! |
+| Current Value       | 7 | ₹7,161.35 ← actual market value |
 
-## 🔄 Data Refresh
+**Old (WRONG):** `P&L = ₹145.99 − ₹7,049.36 = −₹6,903.37`  
+**Fixed:** `P&L = ₹7,161.35 − ₹7,049.36 = +₹111.99` ✅
 
-- Data auto-refreshes every **5 minutes**
-- Manual refresh via the **↻ Refresh** button in the top-right
-- A connection indicator in the bottom-left shows live/error status
+Fix location: `holdings/Holdings.js` → confirmed column indices in `config.js`.
 
 ---
 
-## ⚙️ Column Auto-Detection
+## 📋 Google Sheets Setup
 
-The dashboard automatically detects column types by name:
+### Sheet tabs required (exact names):
 
-| Detected as | Column name contains           |
-|-------------|-------------------------------|
-| P&L         | `p&l`, `pnl`, `profit`, `net`, `gross` |
-| Currency    | `price`, `value`, `invest`, `charges`, `avg`, `cost`, `ltp`, `current`, `entry`, `exit` |
-| Percentage  | `%`, `percent`, `pct`, `return`, `rate` |
-| Quantity    | `qty`, `quantity`, `lots`, `shares`, `filled` |
-| Date        | `date`, `time`                |
+| Tab Name              | Used by               |
+|-----------------------|-----------------------|
+| `F&O`                 | FO page, Dashboard, Analytics |
+| `Holdings Data`       | Holdings page, Dashboard     |
+| `Investments`         | Investments, IPO, Log pages  |
+| `Fundamental Analysis`| FA page                      |
+| `Demat 2 76k`         | Demat2 page                  |
 
-Positive P&L values appear **green**, negative appear **red** automatically.
+### Apps Script deployment:
+
+1. Open your Google Sheet
+2. **Extensions → Apps Script**
+3. Paste entire contents of `apps-script.gs` into `Code.gs`
+4. **Deploy → New deployment**
+   - Type: **Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone** ← must be this
+5. Copy the `/exec` URL
+
+### Update the URL:
+
+In `shared/config.js`:
+```javascript
+GAS_URL: 'YOUR_COPIED_URL_HERE',
+```
 
 ---
 
-## 🛠 Customisation
+## 🚀 Deploy to Netlify
 
-### Change the GAS URL
-```javascript
-// index.html, inside <script>
-const GAS_URL = 'YOUR_NEW_URL_HERE';
-```
+**Drag & drop (60 seconds):**
+1. [app.netlify.com](https://app.netlify.com) → drag the entire `ftracker/` folder
+2. Done — live!
 
-### Change auto-refresh interval
-```javascript
-const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes → change as needed
-```
+**GitHub auto-deploy:**
+1. Push to GitHub
+2. Netlify → Add site → Import from Git → pick repo
+3. Build command: *(leave empty)*
+4. Publish directory: `.`
+5. Every push to `main` auto-deploys
 
-### Change rows per page
-```javascript
-const PAGE_SIZE = 30; // rows per table page
-```
+---
 
-### Change sheet tab names (in gas-backend.gs)
+## 📊 Pages
+
+| Page | Data Source | Key Features |
+|------|-------------|--------------|
+| Dashboard | F&O + Holdings Data | 9 KPIs · 3 charts · Holdings snapshot |
+| F&O Trades | F&O sheet | My Calc vs Mail · Demat bar · Slippage · Win/Loss filter |
+| Holdings | Holdings Data | **BUG FIXED** · Sentinel badges · Sector filter |
+| Investments | Investments[Holdings] | Transaction-level equity |
+| IPO | Investments[IPOs] | IPO P&L · Profit/Loss filter |
+| Trade Log | Investments[Trade_Transaction_Log] | Running total · Daily chart |
+| Analytics | F&O + Holdings | Instrument P&L · Monthly · Volume · Sector · Calc vs Mail |
+| Fund. Analysis | Fundamental Analysis | Graham # · Health score · Frozen columns · Action badges |
+| Demat 2 | Demat 2 76k | Separate account tracking |
+
+---
+
+## ⚙️ Key Config Options (`shared/config.js`)
+
 ```javascript
-const SHEET_MAP = {
-  foTrades:    "F&O",           // ← your actual tab name
-  holdings:    "Holdings Data",
-  investments: "Investments",
-  ipos:        "IPO",
-  transactions: "Transactions"
-};
+GAS_URL:            'your-url',        // Apps Script URL
+CACHE_TTL:          5 * 60 * 1000,    // 5 min cache
+AUTO_REFRESH:       5 * 60 * 1000,    // auto-refresh interval
+PAGE_SIZE:          25,               // rows per table page
+FO_INITIAL_CAPITAL: 50000,            // ₹50,000 F&O capital base
+FO_RESERVE:         1000,             // ₹1,000 reserve for demat display
 ```
 
 ---
 
 ## 🐞 Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| "Connection failed" | Check that Apps Script is deployed as "Anyone" can access |
-| Blank tables | Verify the sheet tab names match `SHEET_MAP` exactly |
-| Wrong numbers | Check that the first row of each sheet is a header row |
-| CORS error in console | Re-deploy the Apps Script as a new deployment (not just a new version) |
-| Charts not rendering | Data may be missing Date or P&L columns — check column headers |
+| Symptom | Fix |
+|---------|-----|
+| "Connection failed" | Re-deploy Apps Script as "Anyone" access |
+| Wrong P&L in Holdings | Check column order matches `config.js HOLDINGS_DATA` map |
+| Investments shows 0 rows | Check blank-row detection in `apps-script.gs` multi-table parser |
+| Charts blank | Make sure Date + P&L columns exist in F&O sheet |
+| FA page empty | Ensure Ticker (Input) column is not blank in FA sheet |
+| Demat 2 missing | Check sheet tab is exactly `"Demat 2 76k"` |
 
 ---
 
-## 📄 License
+## 🔒 Data Privacy
 
-MIT — use freely for personal finance tracking.
+All data stays between your Google Sheets and your browser.  
+No third-party analytics. No data sent anywhere except GAS ↔ browser.
+
+---
+
+MIT License — personal use.

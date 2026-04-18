@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundamental Analysis — FTracker</title>
+  <link rel="stylesheet" href="../shared/common.css">
+  <link rel="stylesheet" href="FA.css">
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <main id="main">
+    <div id="header-placeholder"></div>
+    <div id="content">
+
+      <div class="page-head">
+        <h1>Fundamental <em>Analysis</em></h1>
+        <p>Graham Number · Health Score · Intrinsic Value · Live via GET_STOCK_DATA()</p>
+      </div>
+
+      <div class="cards-grid" id="faKpis"></div>
+
+      <div class="table-card">
+        <div class="table-top">
+          <div class="table-top-left">
+            <span class="table-label">FA Sheet</span>
+            <span class="row-count" id="faCount">—</span>
+          </div>
+          <div class="table-controls">
+            <select class="filter-select" id="faActionFilter" onchange="filterFA()">
+              <option value="">All Actions</option>
+              <option value="STRONG BUY">Strong Buy</option>
+              <option value="WATCHLIST">Watchlist</option>
+              <option value="AVOID">Avoid</option>
+            </select>
+            <input class="search-input" id="faSearch" placeholder="Ticker / company…" oninput="filterFA()">
+          </div>
+        </div>
+        <!-- Scrollable full-width table with frozen first two columns -->
+        <div id="faTableWrap"></div>
+      </div>
+
+    </div>
+  </main>
+  <script src="../shared/config.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/sheets.js"></script>
+  <script src="../shared/components.js"></script>
+  <script src="FA.js"></script>
+</body>
+</html>
