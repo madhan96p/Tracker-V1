@@ -31,6 +31,7 @@ async function loadD2(refresh = false) {
     renderD2KPIs(_d2Rows);
     filterD2();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {

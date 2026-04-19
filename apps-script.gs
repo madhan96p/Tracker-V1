@@ -1,175 +1,221 @@
 /**
- * FTracker — Google Apps Script Backend v2
- * =========================================
- * Deploy: Extensions → Apps Script → Deploy → New deployment
- *   Type:         Web App
- *   Execute as:   Me
- *   Who can access: Anyone
- *
- * Returns all sheet data as structured JSON.
- * Handles multi-table sheets (Investments) by detecting blank-row separators.
+ * FTracker — Google Apps Script v3
+ * ─────────────────────────────────────────────────────────────────────────────
+ * KEY FIXES:
+ *   1. F&O: Row 1 = formula string (SKIP). Row 2 = real headers.
+ *   2. Investments: Two-region scanner:
+ *      LEFT  (cols A-K): detects tables by "Company Name"+"Ticker" pattern
+ *      RIGHT (col P+):   reads Trade_Transaction_Log starting at P1
+ *   3. Future-proof: table detection by content pattern, not hardcoded row numbers
  */
 
-// ─── Sheet Configuration ──────────────────────────────────────────────────────
-const SHEETS = {
-  fo:            { name: "F&O",                  multi: false },
-  holdingsData:  { name: "Holdings Data",        multi: false },
-  investments:   { name: "Investments",          multi: true  },   // 3 tables inside
-  fa:            { name: "Fundamental Analysis", multi: false },
-  demat2:        { name: "Demat 2 76k",          multi: false },
+var SHEET_CFG = {
+  fo:           { name: 'F&O',                 type: 'fo'          },
+  holdingsData: { name: 'Holdings Data',        type: 'single'      },
+  investments:  { name: 'Investments',          type: 'investments' },
+  fa:           { name: 'Fundamental Analysis', type: 'single'      },
+  demat2:       { name: 'Demat 2 76k',          type: 'single'      }
 };
 
-// ─── CORS helper ─────────────────────────────────────────────────────────────
-function jsonOut(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+// ─── Cell formatter ───────────────────────────────────────────────────────────
+function fmt(c) {
+  if (c instanceof Date) {
+    return Utilities.formatDate(c, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return (c === null || c === undefined) ? '' : c;
 }
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+function isBlank(row) {
+  for (var i = 0; i < row.length; i++) {
+    if (row[i] !== '' && row[i] !== null && row[i] !== undefined) return false;
+  }
+  return true;
+}
+
+function toObj(row, headers) {
+  var obj = {};
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i]) obj[headers[i]] = fmt(row[i]);
+  }
+  return obj;
+}
+
+// ─── Single-table sheet ───────────────────────────────────────────────────────
+function readSingle(sheet) {
+  var lr = sheet.getLastRow();
+  var lc = sheet.getLastColumn();
+  if (lr < 2 || lc < 1) return { headers: [], rows: [] };
+
+  var raw = sheet.getRange(1, 1, lr, lc).getValues();
+  var headers = raw[0].map(function(h) { return String(h || '').trim(); });
+  var rows = [];
+  for (var i = 1; i < raw.length; i++) {
+    if (isBlank(raw[i])) continue;
+    rows.push(toObj(raw[i], headers));
+  }
+  return { headers: headers.filter(Boolean), rows: rows };
+}
+
+// ─── F&O sheet — skip Row 1 (formula), use Row 2 as headers ──────────────────
+function readFO(sheet) {
+  var lr = sheet.getLastRow();
+  var lc = sheet.getLastColumn();
+  if (lr < 3 || lc < 1) return { headers: [], rows: [] };
+
+  var raw = sheet.getRange(1, 1, lr, lc).getValues();
+  // raw[0] = Row 1 = formula string  → SKIP
+  // raw[1] = Row 2 = real headers    → USE
+  var headers = raw[1].map(function(h) { return String(h || '').trim(); });
+  var rows = [];
+  for (var i = 2; i < raw.length; i++) {  // Row 3+ = data
+    if (isBlank(raw[i])) continue;
+    rows.push(toObj(raw[i], headers));
+  }
+  return { headers: headers.filter(Boolean), rows: rows };
+}
+
+// ─── Investments sheet — two-region scanner ────────────────────────────────────
+//
+//  LEFT region (cols A–K, indices 0–10):
+//    Rows 1–~11: summary dashboard area → SKIP
+//    Table detection: row where colA="Company Name" AND colB="Ticker"
+//    Table name: from the row directly above the header row
+//
+//  RIGHT region (col P = index 15 onwards):
+//    Row 1 (index 0): Trade_Transaction_Log headers (Sl. No, Date, ...)
+//    Rows 2+: data
+//
+function readInvestments(sheet) {
+  var lr = sheet.getLastRow();
+  var lc = sheet.getLastColumn();
+  if (lr < 1 || lc < 1) return { tables: [] };
+
+  var raw = sheet.getRange(1, 1, lr, lc).getValues();
+  var data = raw.map(function(row) {
+    return row.map(function(c) { return fmt(c); });
+  });
+
+  var tables = [];
+
+  // ── LEFT region: scan for "Company Name" + "Ticker" header rows ────────────
+  for (var r = 0; r < data.length; r++) {
+    var a = String(data[r][0] || '').trim();
+    var b = String(data[r][1] || '').trim();
+
+    if (a === 'Company Name' && b === 'Ticker') {
+      // Collect headers from A:K
+      var hdrs = [];
+      for (var c = 0; c <= 10 && c < data[r].length; c++) {
+        hdrs.push(String(data[r][c] || '').trim());
+      }
+
+      // Table name = first non-blank cell in col A above this row
+      var tName = '';
+      for (var pr = r - 1; pr >= 0; pr--) {
+        var cand = String(data[pr][0] || '').trim();
+        if (cand && cand !== 'Company Name') { tName = cand; break; }
+      }
+      if (!tName) tName = (tables.length === 0) ? 'IPOs' : 'Holdings';
+
+      // Collect data rows until next blank
+      var rows = [];
+      for (var dr = r + 1; dr < data.length; dr++) {
+        var slice = data[dr].slice(0, 11);
+        if (isBlank(slice)) break;
+        rows.push(toObj(slice, hdrs));
+      }
+
+      tables.push({ table_name: tName, headers: hdrs.filter(Boolean), rows: rows });
+    }
+  }
+
+  // ── RIGHT region: Trade_Transaction_Log at col P (0-based index 15) ─────────
+  var P = 15; // column P
+  if (lc > P) {
+    var tlHdrs = data[0].slice(P).map(function(h) { return String(h || '').trim(); });
+    var firstH = tlHdrs[0];
+
+    // Detect by "Sl" or "No" in first header (case-insensitive)
+    if (firstH && /sl|no/i.test(firstH)) {
+      var filtHdrs = tlHdrs.filter(Boolean);
+      var tlRows = [];
+
+      for (var tr = 1; tr < data.length; tr++) {
+        var rs = data[tr].slice(P);
+        if (isBlank(rs)) continue;
+        if (!rs[0] && !rs[1]) continue; // no Sl.No and no Date → skip
+
+        var obj = {};
+        for (var hi = 0; hi < filtHdrs.length; hi++) {
+          obj[filtHdrs[hi]] = (rs[hi] !== '') ? rs[hi] : null;
+        }
+        tlRows.push(obj);
+      }
+
+      tables.push({
+        table_name: 'Trade_Transaction_Log',
+        headers:    filtHdrs,
+        rows:       tlRows
+      });
+    }
+  }
+
+  return { tables: tables };
+}
+
+// ─── doGet entry point ────────────────────────────────────────────────────────
 function doGet(e) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const result = {
-      success:    true,
-      timestamp:  new Date().toISOString(),
-      sheetId:    ss.getId(),
-      sheetName:  ss.getName(),
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var out = {
+      success:   true,
+      timestamp: new Date().toISOString(),
+      sheetId:   ss.getId(),
+      sheetName: ss.getName()
     };
 
-    for (const [key, cfg] of Object.entries(SHEETS)) {
-      const sheet = ss.getSheetByName(cfg.name);
-      if (!sheet) {
-        result[key] = { error: "Sheet '" + cfg.name + "' not found" };
-        continue;
-      }
-      if (cfg.multi) {
-        result[key] = readMultiTableSheet(sheet);
-      } else {
-        result[key] = readSingleSheet(sheet);
-      }
+    for (var key in SHEET_CFG) {
+      var cfg   = SHEET_CFG[key];
+      var sh    = ss.getSheetByName(cfg.name);
+      if (!sh) { out[key] = { error: "Sheet not found: " + cfg.name }; continue; }
+
+      if      (cfg.type === 'fo')          out[key] = readFO(sh);
+      else if (cfg.type === 'investments') out[key] = readInvestments(sh);
+      else                                 out[key] = readSingle(sh);
     }
 
-    return jsonOut(result);
-  } catch (e) {
-    return jsonOut({ success: false, error: e.message, stack: e.stack });
+    return ContentService
+      .createTextOutput(JSON.stringify(out))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// ─── Read a single-table sheet → { headers, rows } ───────────────────────────
-function readSingleSheet(sheet) {
-  const lastRow = sheet.getLastRow();
-  const lastCol = sheet.getLastColumn();
-  if (lastRow < 2 || lastCol < 1) return { headers: [], rows: [] };
-
-  const raw = sheet.getRange(1, 1, lastRow, lastCol).getValues();
-  const headers = raw[0].map(h => String(h || '').trim());
-
-  const rows = [];
-  for (let i = 1; i < raw.length; i++) {
-    const r = raw[i];
-    // Skip completely empty rows
-    if (r.every(c => c === '' || c === null || c === undefined)) continue;
-    const obj = {};
-    headers.forEach((h, j) => {
-      let v = r[j];
-      if (v instanceof Date) v = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      obj[h] = (v === null || v === undefined) ? null : v;
-    });
-    rows.push(obj);
-  }
-  return { headers, rows };
-}
-
-// ─── Read a multi-table sheet → { tables: [{name, headers, rows}] } ──────────
-//   Tables are separated by blank rows. First non-empty row after a blank is the
-//   table header. We also fall back to detecting rows where col-A looks like a
-//   header label (string) after data rows.
-function readMultiTableSheet(sheet) {
-  const lastRow = sheet.getLastRow();
-  const lastCol = sheet.getLastColumn();
-  if (lastRow < 1 || lastCol < 1) return { tables: [] };
-
-  const raw = sheet.getRange(1, 1, lastRow, lastCol).getValues();
-
-  // Convert dates
-  const data = raw.map(row =>
-    row.map(c => {
-      if (c instanceof Date) return Utilities.formatDate(c, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      return (c === null || c === undefined) ? '' : c;
-    })
-  );
-
-  const tables = [];
-  let i = 0;
-
-  while (i < data.length) {
-    // Skip blank rows
-    if (isBlankRow(data[i])) { i++; continue; }
-
-    // This non-blank row is a table header
-    const headers = data[i].map(h => String(h || '').trim()).filter((_, idx) =>
-      data[i].slice(idx).some(c => c !== '')
-    );
-    // Recompute headers for all columns (including trailing empties up to lastCol)
-    const fullHeaders = data[i].map(h => String(h || '').trim());
-    i++;
-
-    const rows = [];
-    while (i < data.length && !isBlankRow(data[i])) {
-      const obj = {};
-      fullHeaders.forEach((h, j) => {
-        if (h) obj[h] = data[i][j] !== '' ? data[i][j] : null;
-      });
-      rows.push(obj);
-      i++;
-    }
-
-    // Derive table name from first header or position
-    const tableName = fullHeaders[0] || ('Table_' + (tables.length + 1));
-    tables.push({
-      table_name: deriveTableName(fullHeaders, tables.length),
-      headers:    fullHeaders.filter(h => h !== ''),
-      rows,
-    });
-  }
-
-  return { tables };
-}
-
-function isBlankRow(row) {
-  return row.every(c => c === '' || c === null || c === undefined);
-}
-
-// Known table names for the Investments sheet based on confirmed structure
-const KNOWN_TABLE_NAMES = ['Holdings', 'IPOs', 'Trade_Transaction_Log'];
-
-function deriveTableName(headers, idx) {
-  // Try to match known tables by their first header
-  const firstH = (headers[0] || '').trim();
-  if (firstH === 'Company Name') {
-    // Could be Holdings or IPOs - use positional index
-    return idx === 0 ? 'Holdings' : 'IPOs';
-  }
-  if (firstH === 'Sl. No' || firstH === 'Sl.No' || firstH === 'S.No') {
-    return 'Trade_Transaction_Log';
-  }
-  return KNOWN_TABLE_NAMES[idx] || ('Table_' + (idx + 1));
-}
-
-// ─── Test function — run manually from GAS editor ─────────────────────────────
+// ─── Manual test — run from GAS editor, check Logs ───────────────────────────
 function testAll() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  Logger.log('Spreadsheet: ' + ss.getName());
-  for (const [key, cfg] of Object.entries(SHEETS)) {
-    const sheet = ss.getSheetByName(cfg.name);
-    if (!sheet) { Logger.log(key + ': SHEET NOT FOUND → ' + cfg.name); continue; }
-    const data = cfg.multi ? readMultiTableSheet(sheet) : readSingleSheet(sheet);
-    if (cfg.multi) {
-      Logger.log(key + ' (multi): ' + (data.tables || []).length + ' tables');
-      (data.tables || []).forEach(t => Logger.log('  - ' + t.table_name + ': ' + t.rows.length + ' rows'));
-    } else {
-      Logger.log(key + ': ' + (data.rows || []).length + ' rows, ' + (data.headers || []).length + ' cols');
-    }
-  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log('=== FTracker v3 Test ===');
+
+  // F&O
+  var fo = readFO(ss.getSheetByName('F&O'));
+  Logger.log('F&O headers[0-4]: ' + fo.headers.slice(0,5).join(' | '));
+  Logger.log('F&O rows: ' + fo.rows.length);
+  if (fo.rows[0]) Logger.log('F&O row1 → Date:' + fo.rows[0]['Date'] + ' Net P&L:' + fo.rows[0]['Net P&L']);
+
+  // Investments
+  var inv = readInvestments(ss.getSheetByName('Investments'));
+  Logger.log('Investments tables: ' + inv.tables.length);
+  inv.tables.forEach(function(t) {
+    Logger.log('  [' + t.table_name + '] ' + t.rows.length + ' rows | ' + t.headers.slice(0,4).join(', '));
+    if (t.rows[0]) Logger.log('    row1: ' + JSON.stringify(t.rows[0]).slice(0, 120));
+  });
+
+  // Holdings Data
+  var hd = readSingle(ss.getSheetByName('Holdings Data'));
+  Logger.log('Holdings Data: ' + hd.rows.length + ' rows');
+  if (hd.rows[0]) Logger.log('  row1 Invested=' + hd.rows[0]['Total Invested'] + ' Current=' + hd.rows[0]['Current Value']);
 }

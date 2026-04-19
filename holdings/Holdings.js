@@ -64,6 +64,7 @@ async function loadHoldings(refresh = false) {
     renderKPIs(_allRows);
     applyFilters();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
 

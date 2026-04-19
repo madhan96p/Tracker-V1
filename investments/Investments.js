@@ -42,6 +42,7 @@ async function loadInvestments(refresh = false) {
     filterInvHold();
     filterInvIpo();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {

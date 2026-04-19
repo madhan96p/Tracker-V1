@@ -607,3 +607,80 @@ tr:last-child td { border-bottom: none; }
   .search-input { width: 100%; }
   .table-controls { flex-direction: column; align-items: flex-start; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   THEME SYSTEM — CSS variable transitions
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+/* ─── Theme toggle bar ─────────────────────────────────────────── */
+.theme-bar {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+.theme-btn {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.05em;
+  transition: all 0.18s;
+}
+.theme-btn:hover {
+  border-color: var(--border-3);
+  opacity: 0.85;
+}
+
+/* ─── Streak section ───────────────────────────────────────────── */
+.streak-section {
+  margin: 8px 10px;
+  padding: 10px 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.streak-header {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t4);
+  margin-bottom: 8px;
+}
+.streak-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.streak-row:last-child { margin-bottom: 0; }
+.streak-lbl {
+  font-family: var(--mono);
+  font-size: 0.60rem;
+  color: var(--t3);
+}
+.streak-val {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--t2);
+  text-align: right;
+}
+.streak-val.streak-win  { color: var(--gain); }
+.streak-val.streak-loss { color: var(--loss); }
+
+/* ─── Light theme — readable table cells ──────────────────────── */
+/* When light theme is active, override hard-coded rgba on table cells */
+/* (accent-dim and border already update via CSS vars) */
+

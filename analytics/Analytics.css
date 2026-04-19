@@ -1,2 +1,45 @@
 /* analytics/Analytics.css */
 /* Nothing extra — all shared from common.css */
+/* analytics/Analytics.css */
+
+/* Streak heatmap */
+.streak-heatmap {
+  padding: 4px 0 8px;
+}
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--t3);
+}
+.hm-leg { display: flex; align-items: center; gap: 5px; }
+.hm-leg-count { margin-left: auto; color: var(--t4); }
+
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hm-dot {
+  width: 14px; height: 14px;
+  border-radius: 2px;
+  cursor: help;
+  transition: transform 0.1s;
+  flex-shrink: 0;
+}
+.hm-dot:hover { transform: scale(1.5); z-index: 10; }
+.hm-dot.sm    { width: 10px; height: 10px; cursor: default; }
+.hm-dot.hm-win  { background: var(--gain); opacity: 0.75; }
+.hm-dot.hm-loss { background: var(--loss); opacity: 0.75; }
+.hm-dot.hm-be   { background: var(--sky);  opacity: 0.40; }
+
+.heatmap-empty {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--t4);
+  padding: 20px 0;
+  text-align: center;
+}

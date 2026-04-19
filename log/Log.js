@@ -44,6 +44,7 @@ async function loadLog(refresh = false) {
     renderRunTotalChart(_logRows);
     filterLog();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], _logRows));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {

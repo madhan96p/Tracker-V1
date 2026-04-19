@@ -28,6 +28,7 @@ async function loadIPO(refresh = false) {
     renderIPOKPIs(_ipoRows);
     filterIPO();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {

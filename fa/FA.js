@@ -68,6 +68,7 @@ async function loadFA(refresh = false) {
     renderFAKPIs(_faRows);
     filterFA();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks([], []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {

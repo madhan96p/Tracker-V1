@@ -27,6 +27,7 @@ async function loadFO(refresh = false) {
     renderDematBar(_foRows);
     applyFOFilters();
 
+    COMPONENTS.setStreaks(UTILS.computeStreaks(_foRows, []));
     COMPONENTS.setConn('live', 'Live · ' + new Date().toLocaleTimeString('en-IN'));
     COMPONENTS.setLastSync();
   } catch (err) {
