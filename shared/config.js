@@ -3,7 +3,7 @@
  */
 const CONFIG = {
 
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbwCbA3_zTufLYY_5-NhEUx25ykvAfCOQQzYTAMr678GgZ57HDbe469xAdjfhe_qnr-FJQ/exec',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbzNZGr2DlfZ3TFgVZIY3iUvhrXgY7NNssOZxFfOtfZyNfoJWHjDW6I0qtmcvVM-tFzOCw/exec',
 
   CACHE_TTL:      5 * 60 * 1000,
   AUTO_REFRESH:   5 * 60 * 1000,
