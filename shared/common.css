@@ -590,22 +590,59 @@ tr:last-child td { border-bottom: none; }
 #overlay.show { display: block; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .charts-grid { grid-template-columns: 1fr; }
-  .chart-card.span-2 { grid-column: auto; }
+.mobile-stats-bar {
+  display: none; /* Only visible on mobile */
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  position: sticky;
+  top: var(--header-h);
+  z-index: 99;
+  justify-content: space-around;
+  gap: 10px;
 }
+.ms-item { text-align: center; }
+.ms-lbl { font-size: 0.5rem; color: var(--t4); text-transform: uppercase; }
+.ms-val { font-size: 0.8rem; font-weight: 700; color: var(--t1); }
+
+/* 2. Bottom Nav (New) */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  z-index: 300;
+  justify-content: space-around;
+  align-items: center;
+}
+.bn-item { color: var(--t3); font-size: 0.8rem; text-align: center; }
+.bn-item.active { color: var(--accent); }
+
+/* 3. Collapsible Charts */
+.chart-collapse { margin-bottom: 20px; }
+.chart-collapse summary {
+  list-style: none; /* Hide default triangle */
+  cursor: pointer;
+  padding: 10px;
+  background: var(--bg-3);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--t3);
+  text-transform: uppercase;
+}
+.chart-collapse summary::after { content: ' ▾'; float: right; }
+.chart-collapse[open] summary::after { content: ' ▴'; }
+
+/* 4. Fix Responsive Breakpoints */
 @media (max-width: 768px) {
-  #sidebar { transform: translateX(-100%); }
-  #sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.5); }
-  .hamburger { display: flex; }
-  #main { margin-left: 0; }
-  #content { padding: 16px 14px 40px; }
-  .cards-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .cards-grid { grid-template-columns: 1fr; }
-  .search-input { width: 100%; }
-  .table-controls { flex-direction: column; align-items: flex-start; }
+  .mobile-stats-bar { display: flex; }
+  .bottom-nav { display: flex; }
+  /* Hide desktop sidebar */
+  #sidebar { display: none; }
+  #main { margin-left: 0; padding-bottom: 60px; } /* Room for bottom nav */
 }
 
 /* ═══════════════════════════════════════════════════════════════════
